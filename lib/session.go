@@ -3,7 +3,7 @@ package ofa
 import (
     "net/url"
 
-    "github.com/go-playground/validator"
+    "github.com/go-playground/validator/v10"
     "github.com/spf13/pflag"
 )
 
