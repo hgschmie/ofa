@@ -25,9 +25,9 @@ func init() {
 
 var (
     defaultCmd = &cobra.Command{
-        Use:   "global",
-        Short: "Manage global settings",
-        Long:  "Manage global settings.",
+        Use:   "defaults",
+        Short: "Manage default settings",
+        Long:  "Manage default settings.",
         Run: func(cmd *cobra.Command, args []string) {
             _ = cmd.Usage()
         },
