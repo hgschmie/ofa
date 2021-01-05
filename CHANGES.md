@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+* Remove double prompt when creating or updating a profile in interactive mode
+
+
 ## [1.0.0] - 2021-01-04
 
-First public release
+* First public release

@@ -35,6 +35,10 @@ func CreateDefaultSettings(flags *pflag.FlagSet) (*DefaultSettings, error) {
         flagConfigProvider(FlagSetInteractive),
         interactiveBoolValue("Default interactive setting", defaultSettings.Interactive))
 
+    defaultSettings.Profile.ProfileName = evaluateString(labelProfile,
+        flagConfigProvider(FlagSetProfile),
+        interactiveStringValue(profilePrompt(nil, labelProfile), defaultSettings.Profile.ProfileName, nil))
+
     profileSettings, err := CreateProfileSettings(flags, nil, defaultSettings.Profile)
     if err != nil {
         return nil, err
