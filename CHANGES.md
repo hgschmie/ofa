@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Remove double prompt when creating or updating a profile in interactive mode
+* Do not offer empty profile name for commands that require a profile
 
 
 ## [1.0.0] - 2021-01-04

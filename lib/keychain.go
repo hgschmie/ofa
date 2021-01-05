@@ -30,7 +30,7 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
     profileName := evaluateString(labelProfile,
         flagConfigProvider(FlagProfile),      // --profile flag
         rootConfigProvider(globalKeyProfile), // root level configuration key "profile"
-        profileMenu())
+        profileMenu(true))
 
     profileConfigProvider := newNullConfigProvider()
 

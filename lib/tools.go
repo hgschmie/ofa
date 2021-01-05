@@ -174,7 +174,7 @@ func logIntSetting(label string, value *int64) {
     }
 }
 
-func profileMenu() configProvider {
+func profileMenu(allowNone bool) configProvider {
     _, p := ListProfiles()
 
     if len(p) == 0 {
@@ -185,6 +185,8 @@ func profileMenu() configProvider {
     for k := range p {
         profileMap[k] = toSP(k)
     }
-    profileMap["<none>"] = nil
+    if allowNone {
+        profileMap["<none>"] = nil
+    }
     return interactiveMenu("Profile", profileMap, nil)
 }

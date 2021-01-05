@@ -52,7 +52,7 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
     profileName := evaluateString(labelProfile,
         flagConfigProvider(FlagProfile),      // --profile flag
         rootConfigProvider(globalKeyProfile), // root level configuration key "profile"
-        profileMenu()) // interactive prompt
+        profileMenu(true)) // interactive prompt
 
     profileConfigProvider := newNullConfigProvider()
 

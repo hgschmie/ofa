@@ -137,7 +137,7 @@ func SelectProfile(flags *pflag.FlagSet) *ProfileSettings {
 
     profile := evaluateString(labelProfile,
         flagConfigProvider(FlagProfile), // --profile flag
-        profileMenu())
+        profileMenu(false))
 
     if profile == nil {
         return nil
