@@ -63,9 +63,9 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
     }
 
     session.User = *evaluateString(labelUser,
-        flagConfigProvider(FlagUser),                 // --user flag
-        profileConfigProvider(profileKeyUser),        // profile level configuration key "okta_user"
-        rootConfigProvider(profileKeyUser),           // global configuration key "okta_user"
+        flagConfigProvider(FlagUser),                // --user flag
+        profileConfigProvider(profileKeyUser),       // profile level configuration key "okta_user"
+        rootConfigProvider(profileKeyUser),          // global configuration key "okta_user"
         interactiveStringValue(labelUser, nil, nil), // interactive prompt
         defaultStringValue(""))
 

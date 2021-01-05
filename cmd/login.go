@@ -29,7 +29,7 @@ func init() {
 }
 
 var (
-    noSave bool = false
+    noSave = false
 
     loginCmd = &cobra.Command{
         Use:   "login",
