@@ -57,6 +57,7 @@ The `ofa` application supports the `--help` flag and the `help` command everywhe
 * `ofa password remove`
 * `ofa login`
 
+The `ofa version` command displays the version and build information.
 
 #### global flags
 
