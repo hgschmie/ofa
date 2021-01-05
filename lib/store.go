@@ -6,29 +6,25 @@ import (
     "path/filepath"
 
     "github.com/pelletier/go-toml"
+    log "github.com/sirupsen/logrus"
     "github.com/spf13/viper"
 )
 
 var (
-    store *viper.Viper
+    store      *viper.Viper
+    configFile string
 )
 
 func init() {
     store = viper.New()
-}
-
-//
-// LoadConfig loads the on-disk configuration file
-//
-func LoadConfig() error {
+    store.SetConfigName("ofa.config")
+    store.SetConfigType("toml")
 
     homeDir, err := userHomeDir()
     if err != nil {
-        return err
+        log.Panicf("Could not determine home directory: %v", err)
     }
-
-    store.SetConfigName("ofa.config")
-    store.SetConfigType("toml")
+    configPath := filepath.Join(*homeDir, ".config")
 
     // there is some risk here by setting XDG_CONFIG_HOME to "/root/.config" and then run this
     // program with a suid bit which would allow reading credentials of the root user
@@ -37,10 +33,18 @@ func LoadConfig() error {
     // deserve what is coming.
     xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
     if len(xdgConfigHome) > 0 {
-        store.AddConfigPath(xdgConfigHome)
+        configPath = xdgConfigHome
     }
 
-    store.AddConfigPath(filepath.Join(*homeDir, ".config"))
+    store.AddConfigPath(configPath)
+
+    configFile = filepath.Join(configPath, "ofa.config")
+}
+
+//
+// LoadConfig loads the on-disk configuration file
+//
+func LoadConfig() error {
 
     if err := store.ReadInConfig(); err != nil {
         if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
@@ -155,12 +159,17 @@ func setBool(tree *toml.Tree, field string, value *bool) error {
 }
 
 func loadConfigFile() (*toml.Tree, error) {
-    configFile := store.ConfigFileUsed()
-    return toml.LoadFile(configFile)
+    tree, err := toml.LoadFile(configFile)
+    if err != nil {
+        if os.IsNotExist(err) {
+            return toml.Load("")
+        }
+        return nil, err
+    }
+    return tree, nil
 }
 
 func storeConfigFile(tree *toml.Tree) error {
-    configFile := store.ConfigFileUsed()
     return storeFile(configFile, func(filename string) error {
         if file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666); err != nil {
             return err

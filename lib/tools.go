@@ -94,7 +94,9 @@ func storeFile(filename string, writeFile func(string) error) error {
 
     if _, err := os.Stat(newFilename); err == nil {
         if err := os.Rename(filename, oldFilename); err != nil {
-            return err
+            if !os.IsNotExist(err) {
+                return err
+            }
         }
         if err := os.Rename(newFilename, filename); err != nil {
             return err
