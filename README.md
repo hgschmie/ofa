@@ -16,7 +16,7 @@ This requires a regular Okta account or at least an Okta trial account; develope
 
 The `ofa` tool requires information about the Okta setup:
 
-* The "Okta organization URL": This is the main entrypoint, usually https://&lt;company name&gt;.okta.com/
+* The "Okta organization URL": This is the main entrypoint, usually `https://<company name>.okta.com/`
 
 * One or more "Okta app URLs": After logging into the Okta organization URL above, hover over the AWS application icon in the web view and selecting "Copy Link Address" in the browser. Stripping the query section (`?fromHome=true`) from this URL gives the Okta app URL.
 
@@ -115,7 +115,7 @@ Each profile may consist of
 
 * Okta Username
 * Okta authentication method (`push`, `sms` or `token`)
-* Okta organization URL (e.g. https://&lt;organization&gt;.okta.com/)
+* Okta organization URL (e.g. `https://<organization>.okta.com/`)
 * Okta app URL (see above)
 * AWS role to assume
 * AWS session time
@@ -160,7 +160,7 @@ Writing the credentials file can be avoided by using the `--eval` flag. In this 
 * Set up defaults and a profile:
 
 ```
-ofa defaults set --set-user=&lt;okta user name&gt; --set-auth-method=push --set-okta-url=https://&lt;organization&gt;.okta.com/ --set-session-time=14400 --batch
+ofa defaults set --set-user=<okta user name> --set-auth-method=push --set-okta-url=https://<organization>.okta.com/ --set-session-time=14400 --batch
 ```
 
 When using with a single Okta instance, username, authentication method and Okta URL will always be the same. Setting them as default makes profile generation simpler.
@@ -173,7 +173,7 @@ As Okta URL and username exist as defaults, this command only prompts for the pa
 
 
 ```
-ofa profile create --profile=new_profile --set-role=&lt;aws role to assume&gt; --set-okta-app-url=&lt;... okta aws app url from above ...&gt; --batch
+ofa profile create --profile=new_profile --set-role=<aws role to assume> --set-okta-app-url=<... okta aws app url from above ...> --batch
 ```
 
 This command assigns the remaining, profile specific settings to the `new_profile` profile.
@@ -201,7 +201,7 @@ allows setting of environment variables without touching the AWS credentials fil
 * Set up a second profile:
 
 ```
-ofa profile create --profile=dev --set-okta-app-url=&lt;... okta aws app url from above ...&gt; --batch
+ofa profile create --profile=dev --set-okta-app-url=<... okta aws app url from above ...> --batch
 ```
 
 Unlike the previous profile, this one does not contain an AWS role. If Okta returns more than one role, `ofa` will prompt:
@@ -214,10 +214,10 @@ INFO Verbose:                  true (default value)
 INFO Interactive:              true (default value)
 INFO **** Login Session:
 INFO Profile name:             dev (flag: 'profile')
-INFO Okta username:            &lt;okta user name&gt; (global config, key: 'okta_user')
-INFO Okta organization URL:    https://&lt;organization&gt;.okta.com/ (global config, key: 'okta_url')
-INFO Okta password:            &lt;configured&gt; (Keychain for Okta URL 'https://&lt;organization&gt;.okta.com/', username '&lt;okta user name&gt;')
-INFO Okta AWS app URL:         &lt;... okta app url ...&gt; (profile [dev], key: 'okta_app_url')
+INFO Okta username:            <okta user name> (global config, key: 'okta_user')
+INFO Okta organization URL:    https://<organization>.okta.com/ (global config, key: 'okta_url')
+INFO Okta password:            <configured> (Keychain for Okta URL 'https://<organization>.okta.com/', username '<okta user name>')
+INFO Okta AWS app URL:         <... okta app url ...> (profile [dev], key: 'okta_app_url')
 INFO Okta auth method:         push (global config, key: 'okta_auth_method')
 INFO AWS session time:         14400 (global config, key: 'aws_session_time')
 INFO **** Logging into Okta
