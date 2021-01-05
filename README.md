@@ -232,3 +232,8 @@ INFO **** Selecting AWS role from SAML response
 ```
 
 after selecting a role, `ofa` writes credentials in the AWS credentials file and exits.
+
+
+#### NOTE ABOUT MACOS CODE SIGNING
+
+ofa binaries for MacOS are (for now) not signed. Starting with MacOS 10.15, MacOS will complain (and refuse to open the binary). Go to "Security & Privacy" in preferences, choose the "General" tab and click on "Allow anyway" the first time that this happens. Afterwards, ofa can be used normally. See https://github.com/hashicorp/terraform/issues/23033#issuecomment-542302933 for more details.
