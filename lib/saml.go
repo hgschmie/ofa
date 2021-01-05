@@ -90,12 +90,12 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, e
 
     Information("**** Selecting AWS role from SAML response")
 
-    result, err := base64.StdEncoding.DecodeString(*saml)
+    samlDoc, err := base64.StdEncoding.DecodeString(*saml)
     if err != nil {
         return nil, err
     }
 
-    xmlDoc, err := xmlquery.Parse(bytes.NewReader(result))
+    xmlDoc, err := xmlquery.Parse(bytes.NewReader(samlDoc))
     if err != nil {
         return nil, err
     }

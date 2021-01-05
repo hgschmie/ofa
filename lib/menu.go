@@ -37,7 +37,7 @@ func oktaAuthMethodMenuSelector(label string, authFactors []oktaAuthFactor) (*ok
     m := make(map[string]*oktaAuthFactor, len(authFactors))
     items := make([]string, len(authFactors))
     for i, v := range authFactors {
-        m[v.String()] = &v
+        m[v.String()] = &authFactors[i]
         items[i] = v.String()
     }
 
@@ -57,7 +57,12 @@ func awsRoleMenuSelector(label string, roles []samlAwsRole) (*samlAwsRole, error
     m := make(map[string]*samlAwsRole, len(roles))
     items := make([]string, len(roles))
     for i, v := range roles {
-        m[v.String()] = &v
+        // there is a wonderful bug hidden here which is due to the legacy of golang to C.
+        // When using "&v" here, this will store not the address of the element in the
+        // roles array but of v itself which will change its value with the next iteration.
+        //
+        // This does not happen in programming languages that have no pointers. golang has, which is unfortunate.
+        m[v.String()] = &roles[i]
         items[i] = v.String()
     }
 
@@ -76,6 +81,9 @@ func awsRoleMenuSelector(label string, roles []samlAwsRole) (*samlAwsRole, error
 func menuSelector(label string, items []string, defaultValue *string) (*string, error) {
 
     if !*globalInteractive {
+        if defaultValue != nil {
+            return defaultValue, nil
+        }
         return nil, fmt.Errorf("Selection required but not interactive")
     }
 
@@ -112,7 +120,6 @@ func textInput(label string, defaultValue *string, hidden bool, validate promptu
         if defaultValue != nil {
             return defaultValue, nil
         }
-
         return nil, fmt.Errorf("Input required but not interactive")
     }
 
