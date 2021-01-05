@@ -44,7 +44,7 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
         flagConfigProvider(FlagOktaURL),
         profileConfigProvider(profileKeyOktaURL),
         rootConfigProvider(profileKeyOktaURL),
-        interactiveStringValue(promptOktaURL, nil, validateURL)))
+        interactiveStringValue(labelOktaURL, nil, validateURL)))
 
     if err != nil {
         return nil, err
@@ -54,7 +54,7 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
         flagConfigProvider(FlagUser),          // --user flag
         profileConfigProvider(profileKeyUser), // profile level configuration key "okta_user"
         rootConfigProvider(profileKeyUser),    // global configuration key "okta_user"
-        interactiveStringValue(promptUser, nil, nil)) // interactive prompt
+        interactiveStringValue(labelUser, nil, nil)) // interactive prompt
 
     if user == nil {
         return nil, fmt.Errorf("No user name given!")
@@ -65,7 +65,7 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
     if promptForPassword {
         keychainEntry.Password = evaluateMask(labelPassword,
             flagConfigProvider(FlagPassword), // --password flag
-            interactivePasswordValue(promptPassword+" (Press ENTER to delete)")) // interactive prompt
+            interactivePasswordValue(labelPassword)) // interactive prompt
     }
 
     if err := validate.Struct(keychainEntry); err != nil {

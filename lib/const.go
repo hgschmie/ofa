@@ -52,17 +52,6 @@ const (
     FlagDescSessionTime = "AWS session time to use."
     FlagDescUser        = "Okta user to use."
 
-    // user prompts
-
-    promptAuthMethod  = "Okta auth method"
-    promptOktaAppURL  = "Okta AWS app URL"
-    promptOktaURL     = "Okta organization URL"
-    promptPassword    = "Okta password"
-    promptProfile     = "Profile name"
-    promptRole        = "AWS role"
-    promptSessionTime = "AWS Session duration"
-    promptUser        = "Okta username"
-
     profilePrefix = "profile_"
 
     // global config keys
@@ -91,9 +80,9 @@ const (
 
     labelAuthMethod  = "Okta auth method"
     labelOktaAppURL  = "Okta AWS app URL"
-    labelOktaURL     = "Okta organisation URL"
+    labelOktaURL     = "Okta organization URL"
     labelPassword    = "Okta password"
     labelRole        = "AWS role"
-    labelSessionTime = "AWS session time"
+    labelSessionTime = "AWS session duration"
     labelUser        = "Okta username"
 )

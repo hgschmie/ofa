@@ -24,7 +24,7 @@ var (
         "sms": {"sms",
             func() (string, error) {
                 prompt := promptui.Prompt{
-                    Label: "Enter SMS code (press enter to resend)",
+                    Label: "Enter SMS code",
                 }
                 result, err := prompt.Run()
 

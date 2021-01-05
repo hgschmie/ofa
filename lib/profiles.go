@@ -61,31 +61,31 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
 
     profileSettings.ProfileName = evaluateString(labelProfile,
         flagConfigProvider(FlagSetProfile),
-        interactiveStringValue(profilePrompt(rootProfileName, promptProfile), defaultSettings.ProfileName, nil))
+        interactiveStringValue(profilePrompt(rootProfileName, labelProfile), defaultSettings.ProfileName, nil))
 
     profileSettings.OktaUser = evaluateString(labelUser,
         flagConfigProvider(FlagSetUser),
-        interactiveStringValue(profilePrompt(profileSettings.ProfileName, promptUser), defaultSettings.OktaUser, nil))
+        interactiveStringValue(profilePrompt(profileSettings.ProfileName, labelUser), defaultSettings.OktaUser, nil))
 
     profileSettings.OktaURL = evaluateString(labelOktaURL,
         flagConfigProvider(FlagSetOktaURL),
-        interactiveStringValue(profilePrompt(profileSettings.ProfileName, promptOktaURL), defaultSettings.OktaURL, validateURL))
+        interactiveStringValue(profilePrompt(profileSettings.ProfileName, labelOktaURL), defaultSettings.OktaURL, validateURL))
 
     profileSettings.OktaAppURL = evaluateString(labelOktaAppURL,
         flagConfigProvider(FlagSetOktaAppURL),
-        interactiveStringValue(profilePrompt(profileSettings.ProfileName, promptOktaAppURL), defaultSettings.OktaAppURL, validateURL))
+        interactiveStringValue(profilePrompt(profileSettings.ProfileName, labelOktaAppURL), defaultSettings.OktaAppURL, validateURL))
 
     profileSettings.OktaAuthMethod = evaluateString(labelAuthMethod,
         flagConfigProvider(FlagSetAuthMethod),
-        interactiveMenu(profilePrompt(profileSettings.ProfileName, promptAuthMethod), authMethods, defaultSettings.OktaAuthMethod))
+        interactiveMenu(profilePrompt(profileSettings.ProfileName, labelAuthMethod), authMethods, defaultSettings.OktaAuthMethod))
 
     profileSettings.AwsRole = evaluateString(labelRole,
         flagConfigProvider(FlagSetRole),
-        interactiveStringValue(profilePrompt(profileSettings.ProfileName, promptRole), defaultSettings.AwsRole, nil))
+        interactiveStringValue(profilePrompt(profileSettings.ProfileName, labelRole), defaultSettings.AwsRole, nil))
 
     profileSettings.AwsSessionTime = evaluateInt(labelSessionTime,
         flagConfigProvider(FlagSetSessionTime),
-        interactiveIntValue(profilePrompt(profileSettings.ProfileName, promptSessionTime), defaultSettings.AwsSessionTime))
+        interactiveIntValue(profilePrompt(profileSettings.ProfileName, labelSessionTime), defaultSettings.AwsSessionTime))
 
     if err := validate.Struct(profileSettings); err != nil {
         return nil, err
@@ -163,7 +163,7 @@ func NewProfileName(flags *pflag.FlagSet) (*ProfileSettings, error) {
 
     profileName := evaluateString(labelProfile,
         flagConfigProvider(FlagProfile), // --profile flag
-        interactiveStringValue(promptProfile, nil, nil))
+        interactiveStringValue(labelProfile, nil, nil))
 
     if profileName == nil {
         return nil, fmt.Errorf("No profile name given")

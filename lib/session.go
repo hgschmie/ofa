@@ -66,7 +66,7 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
         flagConfigProvider(FlagUser),                 // --user flag
         profileConfigProvider(profileKeyUser),        // profile level configuration key "okta_user"
         rootConfigProvider(profileKeyUser),           // global configuration key "okta_user"
-        interactiveStringValue(promptUser, nil, nil), // interactive prompt
+        interactiveStringValue(labelUser, nil, nil), // interactive prompt
         defaultStringValue(""))
 
     var err error
@@ -75,7 +75,7 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
         flagConfigProvider(FlagOktaURL),
         profileConfigProvider(profileKeyOktaURL),
         rootConfigProvider(profileKeyOktaURL),
-        interactiveStringValue(promptOktaURL, nil, validateURL)))
+        interactiveStringValue(labelOktaURL, nil, validateURL)))
 
     if err != nil {
         return nil, err
@@ -86,13 +86,13 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
     session.Password = evaluateMask(labelPassword,
         flagConfigProvider(FlagPassword),     // --password flag
         keychainConfigProvider(session.User), // keychain stored password
-        interactivePasswordValue(promptPassword)) // interactive prompt
+        interactivePasswordValue(labelPassword)) // interactive prompt
 
     session.OktaAppURL, err = getURL(evaluateString(labelOktaAppURL,
         flagConfigProvider(FlagOktaAppURL),
         profileConfigProvider(profileKeyOktaAppURL),
         rootConfigProvider(profileKeyOktaAppURL),
-        interactiveStringValue(promptOktaAppURL, nil, validateURL)))
+        interactiveStringValue(labelOktaAppURL, nil, validateURL)))
 
     if err != nil {
         return nil, err
@@ -102,7 +102,7 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
         flagConfigProvider(FlagAuthMethod),
         profileConfigProvider(profileKeyAuthMethod),
         rootConfigProvider(profileKeyAuthMethod),
-        interactiveMenu(promptAuthMethod, authMethods, nil))
+        interactiveMenu(labelAuthMethod, authMethods, nil))
 
     session.AwsRole = evaluateString(labelRole,
         flagConfigProvider(FlagRole),
@@ -113,7 +113,7 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
         flagConfigProvider(FlagSessionTime),
         profileConfigProvider(profileKeySessionTime),
         rootConfigProvider(profileKeySessionTime),
-        interactiveIntValue(promptSessionTime, toIP(defaultSessionDurationInSec)))
+        interactiveIntValue(labelSessionTime, toIP(defaultSessionDurationInSec)))
 
     if err := validate.Struct(session); err != nil {
         return nil, err
