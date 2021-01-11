@@ -1,3 +1,5 @@
 #! /bin/bash
 
-goreleaser --release-notes=CHANGES.md
+RELEASE_NOTES=changes/$(changie latest).md
+
+goreleaser --release-notes=${RELEASE_NOTES}
