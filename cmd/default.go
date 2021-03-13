@@ -15,10 +15,24 @@ func init() {
     defaultSetCmd.Flags().Bool(ofa.FlagSetVerbose, true, ofa.FlagDescSetVerbose)
     defaultSetCmd.Flags().Bool(ofa.FlagSetInteractive, true, ofa.FlagDescSetInteractive)
     defaultSetCmd.Flags().String(ofa.FlagSetProfile, "", ofa.FlagDescSetProfileName)
+    defaultSetCmd.Flags().String(ofa.FlagSetProfileType, "", ofa.FlagDescSetProfileType)
     defaultSetCmd.Flags().String(ofa.FlagSetUser, "", ofa.FlagDescSetUser)
+
+    // Okta
+
     defaultSetCmd.Flags().String(ofa.FlagSetOktaURL, "", ofa.FlagDescSetOktaURL)
     defaultSetCmd.Flags().String(ofa.FlagSetOktaAppURL, "", ofa.FlagDescSetOktaAppURL)
-    defaultSetCmd.Flags().String(ofa.FlagSetAuthMethod, "", ofa.FlagDescSetAuthMethod)
+    defaultSetCmd.Flags().String(ofa.FlagSetOktaAuthMethod, "", ofa.FlagDescSetOktaAuthMethod)
+
+    // Auth0
+
+    defaultSetCmd.Flags().String(ofa.FlagSetAuth0URL, "", ofa.FlagDescSetAuth0URL)
+    defaultSetCmd.Flags().String(ofa.FlagSetAuth0AuthMethod, "", ofa.FlagDescSetAuth0AuthMethod)
+    defaultSetCmd.Flags().String(ofa.FlagSetAuth0ClientId, "", ofa.FlagDescSetAuth0ClientId)
+    defaultSetCmd.Flags().String(ofa.FlagSetAuth0ClientSecret, "", ofa.FlagDescSetAuth0ClientSecret)
+
+    // AWS
+
     defaultSetCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)
     defaultSetCmd.Flags().Int64(ofa.FlagSetSessionTime, 0, ofa.FlagDescSetSessionTime)
 }

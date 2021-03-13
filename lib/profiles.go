@@ -4,31 +4,67 @@ import (
     "fmt"
     "strings"
 
+    log "github.com/sirupsen/logrus"
     "github.com/spf13/pflag"
     "github.com/spf13/viper"
 )
 
 type ProfileSettings struct {
     ProfileName    *string
-    OktaAppURL     *string `validate:"omitempty,url"`
-    OktaAuthMethod *string `validate:"omitempty,oneof=token sms push"`
-    OktaUser       *string
-    OktaURL        *string `validate:"omitempty,url"`
+    ProfileType    *string `validate:"omitempty,oneof okta auth0"`
+    User           *string
+    Okta           *OktaProfileSettings
+    Auth0          *Auth0ProfileSettings
     AwsRole        *string
     AwsSessionTime *int64 `validate:"omitempty,gte=3600,lte=86400"`
 }
 
+var (
+    profileTypeOkta  = toSP("okta")
+    profileTypeAuth0 = toSP("auth0")
+
+    profileTypes = map[string]*string{
+        "Okta":  profileTypeOkta,
+        "Auth0": profileTypeAuth0,
+    }
+)
+
+type OktaProfileSettings struct {
+    URL        *string `validate:"omitempty,url"`
+    AppURL     *string `validate:"omitempty,url"`
+    AuthMethod *string `validate:"omitempty,oneof=token sms push"`
+}
+
+type Auth0ProfileSettings struct {
+    URL          *string `validate:"omitempty,url"`
+    AuthMethod   *string `validate:"omitempty,oneof=push sms voice totp recovery-code"`
+    ClientId     *string `validate:"omitempty,url"`
+    ClientSecret *string `validate:"omitempty,url"`
+}
+
 func (p *ProfileSettings) Display(profileName *string) {
     if profileName != nil {
+        // actual profile
         Information("")
-        Information("**** Profile [%s] settings:", *profileName)
+        Information("**** Profile [%s - %s] settings:", *profileName, *p.ProfileType)
     } else {
+        // global settings
         logStringSetting(profilePrompt(profileName, labelProfile), p.ProfileName)
     }
-    logStringSetting(profilePrompt(profileName, labelUser), p.OktaUser)
-    logStringSetting(profilePrompt(profileName, labelAuthMethod), p.OktaAuthMethod)
-    logStringSetting(profilePrompt(profileName, labelOktaURL), p.OktaURL)
-    logStringSetting(profilePrompt(profileName, labelOktaAppURL), p.OktaAppURL)
+    logStringSetting(profilePrompt(profileName, labelUser), p.User)
+
+    if p.Okta != nil {
+        logStringSetting(profilePrompt(profileName, labelOktaAuthMethod), p.Okta.AuthMethod)
+        logStringSetting(profilePrompt(profileName, labelOktaURL), p.Okta.URL)
+        logStringSetting(profilePrompt(profileName, labelOktaAppURL), p.Okta.AppURL)
+    }
+
+    if p.Auth0 != nil {
+        logStringSetting(profilePrompt(profileName, labelAuth0AuthMethod), p.Auth0.AuthMethod)
+        logStringSetting(profilePrompt(profileName, labelAuth0URL), p.Auth0.URL)
+        logStringSetting(profilePrompt(profileName, labelAuth0ClientId), p.Auth0.ClientId)
+    }
+
     logStringSetting(profilePrompt(profileName, labelRole), p.AwsRole)
     logIntSetting(profilePrompt(profileName, labelSessionTime), p.AwsSessionTime)
 }
@@ -41,6 +77,7 @@ func ListProfiles() (*DefaultSettings, map[string]*ProfileSettings) {
 
         d.Verbose = getBool(store, globalKeyVerbose)
         d.Interactive = getBool(store, globalKeyInteractive)
+        // load the profile defaults
         d.Profile = *loadProfile(store, getString(store, globalKeyProfile))
 
         for k := range store.AllSettings() {
@@ -59,21 +96,64 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
 
     flagConfigProvider := newFlagConfigProvider(flags, false)
 
-    profileSettings.OktaUser = evaluateString(labelUser,
+    profileSettings.ProfileType = evaluateString(labelProfileType,
+        flagConfigProvider(FlagSetProfileType),
+        interactiveMenu(profilePrompt(rootProfileName, labelProfileType), profileTypes, defaultSettings.ProfileType))
+
+    if rootProfileName != nil && profileSettings.ProfileType == nil {
+        log.Fatalf("A profile type must be selected!")
+    }
+
+    // root profile may contain both okta and auth0, everything else can have only one.
+
+    if rootProfileName == nil || profileSettings.ProfileType == profileTypeOkta {
+        profileSettings.Okta = &OktaProfileSettings{}
+    }
+    if rootProfileName == nil || profileSettings.ProfileType == profileTypeAuth0 {
+        profileSettings.Auth0 = &Auth0ProfileSettings{}
+    }
+
+    profileSettings.User = evaluateString(labelUser,
         flagConfigProvider(FlagSetUser),
-        interactiveStringValue(profilePrompt(rootProfileName, labelUser), defaultSettings.OktaUser, nil))
+        interactiveStringValue(profilePrompt(rootProfileName, labelUser), defaultSettings.User, nil))
 
-    profileSettings.OktaURL = evaluateString(labelOktaURL,
-        flagConfigProvider(FlagSetOktaURL),
-        interactiveStringValue(profilePrompt(rootProfileName, labelOktaURL), defaultSettings.OktaURL, validateURL))
+    // Okta
 
-    profileSettings.OktaAppURL = evaluateString(labelOktaAppURL,
-        flagConfigProvider(FlagSetOktaAppURL),
-        interactiveStringValue(profilePrompt(rootProfileName, labelOktaAppURL), defaultSettings.OktaAppURL, validateURL))
+    if profileSettings.Okta != nil {
+        profileSettings.Okta.URL = evaluateString(labelOktaURL,
+            flagConfigProvider(FlagSetOktaURL),
+            interactiveStringValue(profilePrompt(rootProfileName, labelOktaURL), defaultSettings.Okta.URL, validateURL))
 
-    profileSettings.OktaAuthMethod = evaluateString(labelAuthMethod,
-        flagConfigProvider(FlagSetAuthMethod),
-        interactiveMenu(profilePrompt(rootProfileName, labelAuthMethod), authMethods, defaultSettings.OktaAuthMethod))
+        profileSettings.Okta.AppURL = evaluateString(labelOktaAppURL,
+            flagConfigProvider(FlagSetOktaAppURL),
+            interactiveStringValue(profilePrompt(rootProfileName, labelOktaAppURL), defaultSettings.Okta.AppURL, validateURL))
+
+        profileSettings.Okta.AuthMethod = evaluateString(labelOktaAuthMethod,
+            flagConfigProvider(FlagSetOktaAuthMethod),
+            interactiveMenu(profilePrompt(rootProfileName, labelOktaAuthMethod), oktaAuthMethods, defaultSettings.Okta.AuthMethod))
+    }
+
+    // auth0
+
+    if profileSettings.Auth0 != nil {
+        profileSettings.Auth0.URL = evaluateString(labelAuth0URL,
+            flagConfigProvider(FlagSetAuth0URL),
+            interactiveStringValue(profilePrompt(rootProfileName, labelAuth0URL), defaultSettings.Auth0.URL, validateURL))
+
+        profileSettings.Auth0.AuthMethod = evaluateString(labelAuth0AuthMethod,
+            flagConfigProvider(FlagSetAuth0AuthMethod),
+            interactiveMenu(profilePrompt(rootProfileName, labelAuth0AuthMethod), auth0AuthMethods, defaultSettings.Auth0.AuthMethod))
+
+        profileSettings.Auth0.ClientId = evaluateString(labelAuth0ClientId,
+            flagConfigProvider(FlagSetAuth0ClientId),
+            interactiveStringValue(profilePrompt(rootProfileName, labelAuth0ClientId), defaultSettings.Auth0.ClientId, nil))
+
+        profileSettings.Auth0.ClientSecret = evaluateString(labelAuth0ClientSecret,
+            flagConfigProvider(FlagSetAuth0ClientSecret),
+            interactiveStringValue(profilePrompt(rootProfileName, labelAuth0ClientSecret), defaultSettings.Auth0.ClientSecret, nil))
+    }
+
+    // AWS
 
     profileSettings.AwsRole = evaluateString(labelRole,
         flagConfigProvider(FlagSetRole),
@@ -87,6 +167,18 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
         return nil, err
     }
 
+    if profileSettings.Okta != nil {
+        if err := validate.Struct(profileSettings.Okta); err != nil {
+            return nil, err
+        }
+    }
+
+    if profileSettings.Auth0 != nil {
+        if err := validate.Struct(profileSettings.Auth0); err != nil {
+            return nil, err
+        }
+    }
+
     return profileSettings, nil
 }
 
@@ -97,18 +189,46 @@ func StoreProfileSettings(profileSettings *ProfileSettings) error {
     }
 
     prefix := asProfileKey(*profileSettings.ProfileName) + "."
-    if err := setString(tree, prefix+profileKeyUser, profileSettings.OktaUser); err != nil {
+    if err := setString(tree, prefix+profileKeyProfileType, profileSettings.ProfileType); err != nil {
         return err
     }
-    if err := setString(tree, prefix+profileKeyOktaURL, profileSettings.OktaURL); err != nil {
+    if err := setString(tree, prefix+profileKeyUser, profileSettings.User); err != nil {
         return err
     }
-    if err := setString(tree, prefix+profileKeyOktaAppURL, profileSettings.OktaAppURL); err != nil {
-        return err
+
+    // Okta
+
+    if profileSettings.Okta != nil {
+        if err := setString(tree, prefix+profileKeyOktaURL, profileSettings.Okta.URL); err != nil {
+            return err
+        }
+        if err := setString(tree, prefix+profileKeyOktaAppURL, profileSettings.Okta.AppURL); err != nil {
+            return err
+        }
+        if err := setString(tree, prefix+profileKeyOktaAuthMethod, profileSettings.Okta.AuthMethod); err != nil {
+            return err
+        }
     }
-    if err := setString(tree, prefix+profileKeyAuthMethod, profileSettings.OktaAuthMethod); err != nil {
-        return err
+
+    // Auth0
+
+    if profileSettings.Auth0 != nil {
+        if err := setString(tree, prefix+profileKeyAuth0URL, profileSettings.Auth0.URL); err != nil {
+            return err
+        }
+        if err := setString(tree, prefix+profileKeyAuth0AuthMethod, profileSettings.Auth0.AuthMethod); err != nil {
+            return err
+        }
+        if err := setString(tree, prefix+profileKeyAuth0ClientId, profileSettings.Auth0.ClientId); err != nil {
+            return err
+        }
+        if err := setString(tree, prefix+profileKeyAuth0ClientSecret, profileSettings.Auth0.ClientSecret); err != nil {
+            return err
+        }
     }
+
+    // AWS
+
     if err := setString(tree, prefix+profileKeyRole, profileSettings.AwsRole); err != nil {
         return err
     }
@@ -217,12 +337,29 @@ func profilePrompt(profileName *string, prompt string) string {
 func loadProfile(s *viper.Viper, profileName *string) *ProfileSettings {
     p := &ProfileSettings{ProfileName: profileName}
 
+    p.Okta = &OktaProfileSettings{}
+    p.Auth0 = &Auth0ProfileSettings{}
+
     if s != nil {
         p.ProfileName = profileName
-        p.OktaUser = getString(s, profileKeyUser)
-        p.OktaAuthMethod = getString(s, profileKeyAuthMethod)
-        p.OktaURL = getString(s, profileKeyOktaURL)
-        p.OktaAppURL = getString(s, profileKeyOktaAppURL)
+        p.ProfileType = getString(s, profileKeyProfileType)
+        p.User = getString(s, profileKeyUser)
+
+        // Okta
+
+        p.Okta.AuthMethod = getString(s, profileKeyOktaAuthMethod)
+        p.Okta.URL = getString(s, profileKeyOktaURL)
+        p.Okta.AppURL = getString(s, profileKeyOktaAppURL)
+
+        // auth0
+
+        p.Auth0.URL = getString(s, profileKeyAuth0URL)
+        p.Auth0.AuthMethod = getString(s, profileKeyAuth0AuthMethod)
+        p.Auth0.ClientId = getString(s, profileKeyAuth0ClientId)
+        p.Auth0.ClientSecret = getString(s, profileKeyAuth0ClientSecret)
+
+        // AWS
+
         p.AwsRole = getString(s, profileKeyRole)
         p.AwsSessionTime = getInt(s, profileKeySessionTime)
     }

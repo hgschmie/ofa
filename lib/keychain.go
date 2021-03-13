@@ -52,8 +52,8 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
 
     user := evaluateString(labelUser,
         flagConfigProvider(FlagUser),          // --user flag
-        profileConfigProvider(profileKeyUser), // profile level configuration key "okta_user"
-        rootConfigProvider(profileKeyUser),    // global configuration key "okta_user"
+        profileConfigProvider(profileKeyUser), // profile level configuration key "user"
+        rootConfigProvider(profileKeyUser),    // global configuration key "user"
         interactiveStringValue(labelUser, nil, nil)) // interactive prompt
 
     if user == nil {

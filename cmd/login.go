@@ -18,10 +18,11 @@ func init() {
 
     loginCmd.Flags().String(ofa.FlagProfile, "", "The profile to use.")
     loginCmd.Flags().String(ofa.FlagUser, "", ofa.FlagDescUser)
+    loginCmd.Flags().String(ofa.FlagProfileType, "", ofa.FlagDescProfileType)
     loginCmd.Flags().String(ofa.FlagPassword, "", ofa.FlagDescPassword)
     loginCmd.Flags().String(ofa.FlagOktaURL, "", ofa.FlagDescOktaURL)
     loginCmd.Flags().String(ofa.FlagOktaAppURL, "", ofa.FlagDescOktaAppURL)
-    loginCmd.Flags().String(ofa.FlagAuthMethod, "", ofa.FlagDescAuthMethod)
+    loginCmd.Flags().String(ofa.FlagOktaAuthMethod, "", ofa.FlagDescOktaAuthMethod)
     loginCmd.Flags().String(ofa.FlagRole, "", ofa.FlagDescRole)
     loginCmd.Flags().Int64(ofa.FlagSessionTime, 0, ofa.FlagDescSessionTime)
 
@@ -45,14 +46,41 @@ var (
                 log.Fatalf("Could not create config: %v", err)
             }
 
-            sessionToken, err := ofa.OktaLogin(config)
-            if err != nil {
-                log.Fatalf("Could not log into Okta: %v", err)
-            }
+            var samlResponse *string
 
-            samlResponse, err := ofa.OktaSamlSession(config, *sessionToken)
-            if err != nil {
-                log.Fatalf("Could not parse SAML response: %v", err)
+            switch config.ProfileType {
+
+            case "okta":
+                if config.Okta == nil {
+                    log.Fatalf("Session %s uses Okta but no okta config present!", config.ProfileName)
+                }
+
+                sessionToken, err := ofa.OktaLogin(config)
+                if err != nil {
+                    log.Fatalf("Could not log into Okta: %v", err)
+                }
+
+                samlResponse, err = ofa.OktaSamlSession(config, *sessionToken)
+                if err != nil {
+                    log.Fatalf("Could not parse SAML response: %v", err)
+                }
+
+            case "auth0":
+                if config.Auth0 == nil {
+                    log.Fatalf("Session %s uses Auth0 but no auth0 config present!", config.ProfileName)
+                }
+                sessionToken, err := ofa.Auth0Login(config)
+                if err != nil {
+                    log.Fatalf("Could not log into Auth0: %v", err)
+                }
+
+                samlResponse, err = ofa.Auth0SamlSession(config, *sessionToken)
+                if err != nil {
+                    log.Fatalf("Could not parse SAML response: %v", err)
+                }
+
+            default:
+                log.Fatalf("Unknown Session type %s for Session %s!", config.ProfileType, config.ProfileName)
             }
 
             arnRole, err := ofa.SelectAwsRoleFromSaml(config, samlResponse)
@@ -84,7 +112,7 @@ var (
                 fmt.Printf("export AWS_SESSION_TOKEN=%s\n", v.SessionToken)
             }
 
-            ofa.Information("**** Okta Login complete")
+            ofa.Information("**** Login complete")
             // ------------------
         },
     }

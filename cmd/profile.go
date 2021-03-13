@@ -18,10 +18,24 @@ func init() {
     profileCmd.AddCommand(profileListCmd)
 
     profileCreateCmd.Flags().String(ofa.FlagProfile, "", "The profile to create.")
+    profileCreateCmd.Flags().String(ofa.FlagSetProfileType, "", ofa.FlagDescSetProfileType)
     profileCreateCmd.Flags().String(ofa.FlagSetUser, "", ofa.FlagDescSetUser)
+
+    // Okta
+
     profileCreateCmd.Flags().String(ofa.FlagSetOktaURL, "", ofa.FlagDescSetOktaURL)
     profileCreateCmd.Flags().String(ofa.FlagSetOktaAppURL, "", ofa.FlagDescSetOktaAppURL)
-    profileCreateCmd.Flags().String(ofa.FlagSetAuthMethod, "", ofa.FlagDescSetAuthMethod)
+    profileCreateCmd.Flags().String(ofa.FlagSetOktaAuthMethod, "", ofa.FlagDescSetOktaAuthMethod)
+
+    // auth0
+
+    profileCreateCmd.Flags().String(ofa.FlagSetAuth0URL, "", ofa.FlagDescSetAuth0URL)
+    profileCreateCmd.Flags().String(ofa.FlagSetAuth0AuthMethod, "", ofa.FlagDescSetAuth0AuthMethod)
+    profileCreateCmd.Flags().String(ofa.FlagSetAuth0ClientId, "", ofa.FlagDescSetAuth0ClientId)
+    profileCreateCmd.Flags().String(ofa.FlagSetAuth0ClientSecret, "", ofa.FlagDescSetAuth0ClientSecret)
+
+    // AWS
+
     profileCreateCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)
     profileCreateCmd.Flags().Int64(ofa.FlagSetSessionTime, 0, ofa.FlagDescSetSessionTime)
 
@@ -29,9 +43,22 @@ func init() {
 
     profileUpdateCmd.Flags().String(ofa.FlagProfile, "", "The profile to edit.")
     profileUpdateCmd.Flags().String(ofa.FlagSetUser, "", ofa.FlagDescSetUser)
+
+    // Okta
+
     profileUpdateCmd.Flags().String(ofa.FlagSetOktaURL, "", ofa.FlagDescSetOktaURL)
     profileUpdateCmd.Flags().String(ofa.FlagSetOktaAppURL, "", ofa.FlagDescSetOktaAppURL)
-    profileUpdateCmd.Flags().String(ofa.FlagSetAuthMethod, "", ofa.FlagDescSetAuthMethod)
+    profileUpdateCmd.Flags().String(ofa.FlagSetOktaAuthMethod, "", ofa.FlagDescSetOktaAuthMethod)
+
+    // auth0
+
+    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0URL, "", ofa.FlagDescSetAuth0URL)
+    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0AuthMethod, "", ofa.FlagDescSetAuth0AuthMethod)
+    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0ClientId, "", ofa.FlagDescSetAuth0ClientId)
+    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0ClientSecret, "", ofa.FlagDescSetAuth0ClientSecret)
+
+    // AWS
+
     profileUpdateCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)
     profileUpdateCmd.Flags().Int64(ofa.FlagSetSessionTime, 0, ofa.FlagDescSetSessionTime)
 }

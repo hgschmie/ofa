@@ -63,18 +63,42 @@ func StoreDefaultSettings(globalSettings *DefaultSettings) error {
     if err := setString(tree, globalKeyProfile, globalSettings.Profile.ProfileName); err != nil {
         return err
     }
-    if err := setString(tree, profileKeyUser, globalSettings.Profile.OktaUser); err != nil {
+    if err := setString(tree, profileKeyProfileType, globalSettings.Profile.ProfileType); err != nil {
         return err
     }
-    if err := setString(tree, profileKeyOktaURL, globalSettings.Profile.OktaURL); err != nil {
+    if err := setString(tree, profileKeyUser, globalSettings.Profile.User); err != nil {
         return err
     }
-    if err := setString(tree, profileKeyOktaAppURL, globalSettings.Profile.OktaAppURL); err != nil {
+
+    // Okta
+
+    if err := setString(tree, profileKeyOktaURL, globalSettings.Profile.Okta.URL); err != nil {
         return err
     }
-    if err := setString(tree, profileKeyAuthMethod, globalSettings.Profile.OktaAuthMethod); err != nil {
+    if err := setString(tree, profileKeyOktaAppURL, globalSettings.Profile.Okta.AppURL); err != nil {
         return err
     }
+    if err := setString(tree, profileKeyOktaAuthMethod, globalSettings.Profile.Okta.AuthMethod); err != nil {
+        return err
+    }
+
+    // Auth0
+
+    if err := setString(tree, profileKeyAuth0URL, globalSettings.Profile.Auth0.URL); err != nil {
+        return err
+    }
+    if err := setString(tree, profileKeyAuth0AuthMethod, globalSettings.Profile.Auth0.AuthMethod); err != nil {
+        return err
+    }
+    if err := setString(tree, profileKeyAuth0ClientId, globalSettings.Profile.Auth0.ClientId); err != nil {
+        return err
+    }
+    if err := setString(tree, profileKeyAuth0ClientSecret, globalSettings.Profile.Auth0.ClientSecret); err != nil {
+        return err
+    }
+
+    // AWS
+
     if err := setString(tree, profileKeyRole, globalSettings.Profile.AwsRole); err != nil {
         return err
     }

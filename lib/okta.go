@@ -119,7 +119,7 @@ type oktaAuthFactor struct {
 
 type oktaAuthVerify struct {
     StateToken string  `json:"stateToken"`
-    PassCode   *string `json:"passCode,omitEmpty"`
+    PassCode   *string `json:"passCode,omitempty"`
 }
 
 func (f oktaAuthFactor) String() string {
@@ -181,8 +181,7 @@ type oktaSession struct {
 //
 // OktaLogin logs into Okta using username and password
 //
-func
-OktaLogin(session *LoginSession) (*string, error) {
+func OktaLogin(session *LoginSession) (*string, error) {
 
     Information("**** Logging into Okta")
 
@@ -193,7 +192,7 @@ OktaLogin(session *LoginSession) (*string, error) {
         return nil, err
     }
 
-    authnURL, err := oktaSession.loginSession.OktaURL.Parse("/api/v1/authn")
+    authnURL, err := oktaSession.loginSession.Okta.URL.Parse("/api/v1/authn")
     if err != nil {
         return nil, err
     }
@@ -245,7 +244,7 @@ func mfaInitiate(oktaSession *oktaSession, authTransaction *oktaAuthTransaction)
 
     for _, factor := range authTransaction.Embedded.Factor {
         if oktaFactor, ok := oktaTypes[strings.ToLower(factor.FactorType)]; ok {
-            if oktaSession.loginSession.OktaAuthMethod == nil || strings.ToLower(*oktaSession.loginSession.OktaAuthMethod) == oktaFactor.FactorName {
+            if oktaSession.loginSession.Okta.AuthMethod == nil || strings.ToLower(*oktaSession.loginSession.Okta.AuthMethod) == oktaFactor.FactorName {
                 candidates = append(candidates, factor)
             }
         } else {
@@ -339,7 +338,7 @@ func oktaPost(url string, body []byte) ([]byte, error) {
     }
 
     req.Header.Set("Accept", "application/json")
-    req.Header.Set("Cache-Control", "no-cache")
+    req.Header.Set("Cache-Control", "no-store")
     req.Header.Set("Content-Type", "application/json")
 
     response, err := oktaClient.Do(req)
@@ -368,8 +367,7 @@ func oktaGet(url string) ([]byte, error) {
         return nil, err
     }
 
-    // 	req.Header.Set("Accept", "application/json")
-    req.Header.Set("Cache-Control", "no-cache")
+    req.Header.Set("Cache-Control", "no-store")
 
     response, err := oktaClient.Do(req)
     if err != nil {
