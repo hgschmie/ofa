@@ -50,6 +50,14 @@ func toBPError(b bool, err error) *bool {
     return &b
 }
 
+func extractStringP(values map[string]interface{}, key string) (*string, error) {
+    if value, ok := values[key].(*string); ok {
+        return value, nil
+    } else {
+        return nil, fmt.Errorf("Could not extract '%v' field (%v)", key, values[key])
+    }
+}
+
 func getURL(s *string) (*url.URL, error) {
     if s == nil {
         return nil, nil
@@ -174,11 +182,11 @@ func logIntSetting(label string, value *int64) {
     }
 }
 
-func profileMenu(allowNone bool) configProvider {
+func profileMenu(allowNone bool) configField {
     _, p := ListProfiles()
 
     if len(p) == 0 {
-        return newNullConfigProvider()("")
+        return newNullConfig()("")
     }
 
     profileMap := make(map[string]*string, len(p))

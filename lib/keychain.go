@@ -25,14 +25,14 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
     keychainEntry := &KeychainPassword{}
 
     rootConfigProvider := defaultConfigProvider()
-    flagConfigProvider := newFlagConfigProvider(flags, false)
+    flagConfigProvider := newFlagConfig(flags, false)
 
     profileName := evaluateString(labelProfile,
         flagConfigProvider(FlagProfile),      // --profile flag
         rootConfigProvider(globalKeyProfile), // root level configuration key "profile"
         profileMenu(true))
 
-    profileConfigProvider := newNullConfigProvider()
+    profileConfigProvider := newNullConfig()
 
     if profileName != nil {
         profileConfigProvider = newProfileConfigProvider(*profileName)
@@ -155,8 +155,8 @@ func (p *KeychainPassword) boolValue() (*bool, string) {
     return nil, ""
 }
 
-func newKeychainEntry(url *url.URL) configKey {
-    return func(username string) configProvider {
+func newKeychainEntry(url *url.URL) ConfigProvider {
+    return func(username string) configField {
         return &KeychainPassword{URL: url, User: username}
     }
 }

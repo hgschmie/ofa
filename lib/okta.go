@@ -7,17 +7,27 @@ import (
     "io/ioutil"
     "net/http"
     "net/http/cookiejar"
+    "net/url"
     "strings"
     "time"
 
+    "github.com/antchfx/htmlquery"
     "github.com/antchfx/xpath"
     "github.com/manifoldco/promptui"
+    "github.com/pelletier/go-toml"
     log "github.com/sirupsen/logrus"
 )
 
 var (
     samlPath   *xpath.Expr
     oktaClient *http.Client
+
+    oktaAuthMethods = map[string]*string{
+        "Push Notification":                  toSP("push"),
+        "Text Message":                       toSP("sms"),
+        "TOTP (Google Authenticator, Authy)": toSP("token"),
+        "<unset>":                            nil,
+    }
 
     oktaTypes = map[string]*factorInfo{
         "push": {FactorName: "push"},
@@ -67,6 +77,21 @@ func init() {
  * Okta logic
  */
 
+type OktaSession struct {
+    URL        *url.URL `validate:"required,url"`
+    AppURL     *url.URL `validate:"required,url"`
+    AuthMethod *string  `validate:"omitempty,oneof=token sms push"`
+    config     *LoginSession
+    mfaFactor  *oktaAuthFactor
+    factorInfo *factorInfo
+}
+
+type OktaProfileSettings struct {
+    url        *string `validate:"omitempty,url"`
+    appUrl     *string `validate:"omitempty,url"`
+    authMethod *string `validate:"omitempty,oneof=token sms push"`
+}
+
 type oktaAuthRequest struct {
     Username string `json:"username"`
     Password string `json:"password"`
@@ -100,6 +125,10 @@ type oktaAuthTransaction struct {
 
     Embedded oktaEmbedded            `json:"_embedded"`
     Links    map[string]oktaLinkList `json:"_links"`
+}
+
+func (oar oktaAuthTransaction) String() string {
+    return fmt.Sprintf("ExpiresAt: %s, StateToken: %s, Status: %s", oar.ExpiresAt, oar.StateToken, oar.Status)
 }
 
 type oktaEmbedded struct {
@@ -163,36 +192,65 @@ type oktaErrorResponse struct {
     ErrorCauses  []interface{} `json:"errorCauses"`
 }
 
-func (oar oktaAuthTransaction) String() string {
-    return fmt.Sprintf("ExpiresAt: %s, StateToken: %s, Status: %s", oar.ExpiresAt, oar.StateToken, oar.Status)
-}
-
 type factorInfo struct {
     FactorName string
     Prompt     func() (string, error)
 }
 
-type oktaSession struct {
-    loginSession *LoginSession
-    mfaFactor    *oktaAuthFactor
-    factorInfo   *factorInfo
+func (p *OktaSession) Configure(config *LoginSession) error {
+    var err error
+
+    p.config = config
+    p.URL, err = getURL(evaluateString(labelOktaURL,
+        config.FlagConfig(FlagOktaURL),
+        config.ProfileConfig(profileKeyOktaURL),
+        config.RootConfig(profileKeyOktaURL),
+        interactiveStringValue(labelOktaURL, nil, validateURL)))
+
+    if err != nil {
+        return err
+    }
+
+    keychainConfigProvider := newKeychainEntry(p.URL)
+
+    p.config.Password = evaluateMask(labelPassword,
+        config.FlagConfig(FlagPassword),       // --password flag
+        keychainConfigProvider(p.config.User), // keychain stored password
+        interactivePasswordValue(labelPassword)) // interactive prompt
+
+    p.AppURL, err = getURL(evaluateString(labelOktaAppURL,
+        config.FlagConfig(FlagOktaAppURL),
+        config.ProfileConfig(profileKeyOktaAppURL),
+        config.RootConfig(profileKeyOktaAppURL),
+        interactiveStringValue(labelOktaAppURL, nil, validateURL)))
+
+    if err != nil {
+        return err
+    }
+
+    p.AuthMethod = evaluateString(labelOktaAuthMethod,
+        config.FlagConfig(FlagOktaAuthMethod),
+        config.ProfileConfig(profileKeyOktaAuthMethod),
+        config.RootConfig(profileKeyOktaAuthMethod),
+        interactiveMenu(labelOktaAuthMethod, oktaAuthMethods, nil))
+
+    return validate.Struct(p)
 }
 
-//
-// OktaLogin logs into Okta using username and password
-//
-func OktaLogin(session *LoginSession) (*string, error) {
+func (p *OktaSession) Validate() error {
+    return nil
+}
+
+func (p *OktaSession) Login() (*string, error) {
 
     Information("**** Logging into Okta")
 
-    oktaSession := &oktaSession{loginSession: session}
-
-    postJSON, err := json.Marshal(oktaAuthRequest{oktaSession.loginSession.User, *oktaSession.loginSession.Password})
+    postJSON, err := json.Marshal(oktaAuthRequest{p.config.User, *p.config.Password})
     if err != nil {
         return nil, err
     }
 
-    authnURL, err := oktaSession.loginSession.Okta.URL.Parse("/api/v1/authn")
+    authnURL, err := p.URL.Parse("/api/v1/authn")
     if err != nil {
         return nil, err
     }
@@ -212,9 +270,9 @@ func OktaLogin(session *LoginSession) (*string, error) {
 
         switch authTransaction.Status {
         case "MFA_REQUIRED":
-            authTransaction, err = mfaInitiate(oktaSession, authTransaction)
+            authTransaction, err = p.mfaInitiate(authTransaction)
         case "MFA_CHALLENGE":
-            authTransaction, err = mfaChallenge(oktaSession, authTransaction)
+            authTransaction, err = p.mfaChallenge(authTransaction)
         case "SUCCESS":
             Information("**** Okta login successful")
             return &authTransaction.SessionToken, nil
@@ -224,27 +282,38 @@ func OktaLogin(session *LoginSession) (*string, error) {
     }
 }
 
-func oktaAuthError(response *http.Response, responseBody []byte) error {
-    var errorResponse oktaErrorResponse
-    if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
-        return fmt.Errorf("okta response body garbled")
+func (p *OktaSession) InitiateSamlSession(sessionToken string) (samlResponse *string, err error) {
+    Information("**** Fetching Okta SAML response")
+
+    u := p.AppURL
+    q := u.Query()
+    q.Set("sessionToken", sessionToken)
+    p.AppURL.RawQuery = q.Encode()
+
+    response, err := oktaGet(u.String())
+    if err != nil {
+        return nil, err
     }
 
-    if response.StatusCode == 401 {
-        return fmt.Errorf("could not log into Okta: %s", errorResponse.ErrorSummary)
+    // yeah, this is terrible. It is also the official way according to
+    // https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint
+    // improvement wanted!
+    htmlDoc, err := htmlquery.Parse(bytes.NewReader(response))
+    if err != nil {
+        return nil, err
     }
 
-    return fmt.Errorf("Okta Error (%d) - %s", response.StatusCode, errorResponse.ErrorSummary)
+    return toSP(samlPath.Evaluate(htmlquery.CreateXPathNavigator(htmlDoc)).(string)), nil
 }
 
-func mfaInitiate(oktaSession *oktaSession, authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
+func (p *OktaSession) mfaInitiate(authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
     Information("**** Initiating MFA Challenge")
 
     candidates := make([]oktaAuthFactor, 0)
 
     for _, factor := range authTransaction.Embedded.Factor {
         if oktaFactor, ok := oktaTypes[strings.ToLower(factor.FactorType)]; ok {
-            if oktaSession.loginSession.Okta.AuthMethod == nil || strings.ToLower(*oktaSession.loginSession.Okta.AuthMethod) == oktaFactor.FactorName {
+            if p.AuthMethod == nil || strings.ToLower(*p.AuthMethod) == oktaFactor.FactorName {
                 candidates = append(candidates, factor)
             }
         } else {
@@ -256,23 +325,23 @@ func mfaInitiate(oktaSession *oktaSession, authTransaction *oktaAuthTransaction)
     case 0:
         return nil, fmt.Errorf("authentication using MFA requested, but no available factor found")
     case 1:
-        oktaSession.mfaFactor = &candidates[0]
+        p.mfaFactor = &candidates[0]
     default:
         result, err := oktaAuthMethodMenuSelector("Select MFA Method", candidates)
         if err != nil {
             return nil, err
         }
-        oktaSession.mfaFactor = result
+        p.mfaFactor = result
     }
 
-    oktaSession.factorInfo = oktaTypes[strings.ToLower(oktaSession.mfaFactor.FactorType)]
+    p.factorInfo = oktaTypes[strings.ToLower(p.mfaFactor.FactorType)]
 
     postJSON, err := json.Marshal(oktaAuthVerify{StateToken: authTransaction.StateToken})
     if err != nil {
         return nil, err
     }
 
-    response, err := oktaPost(oktaSession.mfaFactor.Links["verify"].Href, postJSON)
+    response, err := oktaPost(p.mfaFactor.Links["verify"].Href, postJSON)
     if err != nil {
         return nil, err
     }
@@ -285,18 +354,18 @@ func mfaInitiate(oktaSession *oktaSession, authTransaction *oktaAuthTransaction)
     return authTransaction, nil
 }
 
-func mfaChallenge(oktaSession *oktaSession, authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
+func (p *OktaSession) mfaChallenge(authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
     challengeResponse := oktaAuthVerify{StateToken: authTransaction.StateToken}
 
     // based on the result of the *previous* interaction with the API, choose an action. If the previous
     // interaction resulted e.g. in CHALLENGE, prompt the user for the necessary factor.
     switch authTransaction.FactorResult {
     case "CHALLENGE":
-        if oktaSession.factorInfo.Prompt == nil {
-            return nil, fmt.Errorf("Received Okta Challenge but %s does not support challenging!", oktaSession.mfaFactor.FactorType)
+        if p.factorInfo.Prompt == nil {
+            return nil, fmt.Errorf("Received Okta Challenge but %s does not support challenging!", p.mfaFactor.FactorType)
         }
 
-        result, err := oktaSession.factorInfo.Prompt()
+        result, err := p.factorInfo.Prompt()
         if err != nil {
             return nil, err
         }
@@ -360,6 +429,19 @@ func oktaPost(url string, body []byte) ([]byte, error) {
     return responseBody, nil
 }
 
+func oktaAuthError(response *http.Response, responseBody []byte) error {
+    var errorResponse oktaErrorResponse
+    if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
+        return fmt.Errorf("okta response body garbled")
+    }
+
+    if response.StatusCode == 401 {
+        return fmt.Errorf("could not log into Okta: %s", errorResponse.ErrorSummary)
+    }
+
+    return fmt.Errorf("Okta Error (%d) - %s", response.StatusCode, errorResponse.ErrorSummary)
+}
+
 func oktaGet(url string) ([]byte, error) {
 
     req, err := http.NewRequest("GET", url, nil)
@@ -386,4 +468,73 @@ func oktaGet(url string) ([]byte, error) {
     }
 
     return responseBody, nil
+}
+
+//
+// Profile settings
+//
+
+func (p *OktaProfileSettings) Validate() error {
+    return validate.Struct(p)
+}
+
+func (p *OktaProfileSettings) Log(profileName *string) {
+    logStringSetting(profilePrompt(profileName, labelOktaAuthMethod), p.authMethod)
+    logStringSetting(profilePrompt(profileName, labelOktaURL), p.url)
+    logStringSetting(profilePrompt(profileName, labelOktaAppURL), p.appUrl)
+}
+
+func (p *OktaProfileSettings) Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, defaultSettings map[string]interface{}) error {
+
+    defaults := &OktaProfileSettings{}
+    err := defaults.Load(defaultSettings)
+    if err != nil {
+        return err
+    }
+
+    p.url = evaluateString(labelOktaURL,
+        flagConfigProvider(FlagSetOktaURL),
+        interactiveStringValue(profilePrompt(rootProfileName, labelOktaURL), defaults.url, validateURL))
+
+    p.appUrl = evaluateString(labelOktaAppURL,
+        flagConfigProvider(FlagSetOktaAppURL),
+        interactiveStringValue(profilePrompt(rootProfileName, labelOktaAppURL), defaults.appUrl, validateURL))
+
+    p.authMethod = evaluateString(labelOktaAuthMethod,
+        flagConfigProvider(FlagSetOktaAuthMethod),
+        interactiveMenu(profilePrompt(rootProfileName, labelOktaAuthMethod), oktaAuthMethods, defaults.authMethod))
+
+    return nil
+}
+
+func (p *OktaProfileSettings) Load(values map[string]interface{}) error {
+
+    var err error
+
+    p.url, err = extractStringP(values, profileKeyOktaURL)
+    if err != nil {
+        return err
+    }
+
+    p.appUrl, err = extractStringP(values, profileKeyOktaAppURL)
+    if err != nil {
+        return err
+    }
+
+    p.authMethod, err = extractStringP(values, profileKeyOktaAuthMethod)
+
+    return err
+}
+
+func (p *OktaProfileSettings) Store(tree *toml.Tree, prefix string) error {
+    if err := setString(tree, prefix+profileKeyOktaURL, p.url); err != nil {
+        return err
+    }
+    if err := setString(tree, prefix+profileKeyOktaAppURL, p.appUrl); err != nil {
+        return err
+    }
+    if err := setString(tree, prefix+profileKeyOktaAuthMethod, p.authMethod); err != nil {
+        return err
+    }
+    return nil
 }

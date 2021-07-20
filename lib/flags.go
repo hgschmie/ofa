@@ -30,24 +30,24 @@ func init() {
 func SetGlobalFlags(flags *pflag.FlagSet) {
     // resolve the verbose flags etc.
     rootConfigProvider := defaultConfigProvider()
-    flagConfigProvider := newFlagConfigProvider(flags, false)
-    notFlagConfigProvider := newFlagConfigProvider(flags, true)
+    flagConfigProvider := newFlagConfig(flags, false)
+    notFlagConfigProvider := newFlagConfig(flags, true)
 
     // set the global without label first, so no echoing
     globalVerbose, verboseSource = evaluateBool("", flagConfigProvider(FlagVerbose),
         notFlagConfigProvider(FlagQuiet),
         rootConfigProvider(globalKeyVerbose),
-        defaultBoolValue(true))
+        constantBoolValue(true))
 
     globalNoConfig, noConfigSource = evaluateBool("",
         flagConfigProvider(FlagNoConfig),
-        defaultBoolValue(false))
+        constantBoolValue(false))
 
     globalInteractive, interactiveSource = evaluateBool("",
         flagConfigProvider(FlagInteractive),
         notFlagConfigProvider(FlagBatch),
         rootConfigProvider(globalKeyInteractive),
-        defaultBoolValue(isTTY(os.Stderr))) // by default, the app prompts for things if connected to a tty
+        constantBoolValue(isTTY(os.Stderr))) // by default, the app prompts for things if connected to a tty
 }
 
 func DisplayGlobalFlags() {

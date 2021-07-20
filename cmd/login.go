@@ -46,41 +46,21 @@ var (
                 log.Fatalf("Could not create config: %v", err)
             }
 
-            var samlResponse *string
+            var loginProvider = config.Provider
 
-            switch config.ProfileType {
+            err = loginProvider.Validate()
+            if err != nil {
+                log.Fatalf("Could not validate config: #{err}")
+            }
 
-            case "okta":
-                if config.Okta == nil {
-                    log.Fatalf("Session %s uses Okta but no okta config present!", config.ProfileName)
-                }
+            sessionToken, err := loginProvider.Login()
+            if err != nil {
+                log.Fatalf("Could not log into %s: %v", config.ProfileType, err)
+            }
 
-                sessionToken, err := ofa.OktaLogin(config)
-                if err != nil {
-                    log.Fatalf("Could not log into Okta: %v", err)
-                }
-
-                samlResponse, err = ofa.OktaSamlSession(config, *sessionToken)
-                if err != nil {
-                    log.Fatalf("Could not parse SAML response: %v", err)
-                }
-
-            case "auth0":
-                if config.Auth0 == nil {
-                    log.Fatalf("Session %s uses Auth0 but no auth0 config present!", config.ProfileName)
-                }
-                sessionToken, err := ofa.Auth0Login(config)
-                if err != nil {
-                    log.Fatalf("Could not log into Auth0: %v", err)
-                }
-
-                samlResponse, err = ofa.Auth0SamlSession(config, *sessionToken)
-                if err != nil {
-                    log.Fatalf("Could not parse SAML response: %v", err)
-                }
-
-            default:
-                log.Fatalf("Unknown Session type %s for Session %s!", config.ProfileType, config.ProfileName)
+            samlResponse, err := loginProvider.InitiateSamlSession(*sessionToken)
+            if err != nil {
+                log.Fatalf("Could not initiate SAML session using '%s': %v", config.ProfileType, err)
             }
 
             arnRole, err := ofa.SelectAwsRoleFromSaml(config, samlResponse)

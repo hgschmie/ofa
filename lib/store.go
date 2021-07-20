@@ -89,12 +89,12 @@ func (p *StoreConfigProvider) boolValue() (*bool, string) {
     return nil, ""
 }
 
-func defaultConfigProvider() configKey {
+func defaultConfigProvider() ConfigProvider {
     if *globalNoConfig {
-        return newNullConfigProvider()
+        return newNullConfig()
     }
 
-    return func(field string) configProvider {
+    return func(field string) configField {
         return &StoreConfigProvider{store, field, "global config"}
     }
 }

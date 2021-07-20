@@ -25,7 +25,7 @@ func CreateDefaultSettings(flags *pflag.FlagSet) (*DefaultSettings, error) {
 
     globalSettings := &DefaultSettings{}
 
-    flagConfigProvider := newFlagConfigProvider(flags, false)
+    flagConfigProvider := newFlagConfig(flags, false)
 
     globalSettings.Verbose, _ = evaluateBool(labelVerbose,
         flagConfigProvider(FlagSetVerbose),
@@ -70,31 +70,10 @@ func StoreDefaultSettings(globalSettings *DefaultSettings) error {
         return err
     }
 
-    // Okta
-
-    if err := setString(tree, profileKeyOktaURL, globalSettings.Profile.Okta.URL); err != nil {
-        return err
-    }
-    if err := setString(tree, profileKeyOktaAppURL, globalSettings.Profile.Okta.AppURL); err != nil {
-        return err
-    }
-    if err := setString(tree, profileKeyOktaAuthMethod, globalSettings.Profile.Okta.AuthMethod); err != nil {
-        return err
-    }
-
-    // Auth0
-
-    if err := setString(tree, profileKeyAuth0URL, globalSettings.Profile.Auth0.URL); err != nil {
-        return err
-    }
-    if err := setString(tree, profileKeyAuth0AuthMethod, globalSettings.Profile.Auth0.AuthMethod); err != nil {
-        return err
-    }
-    if err := setString(tree, profileKeyAuth0ClientId, globalSettings.Profile.Auth0.ClientId); err != nil {
-        return err
-    }
-    if err := setString(tree, profileKeyAuth0ClientSecret, globalSettings.Profile.Auth0.ClientSecret); err != nil {
-        return err
+    for _, v := range globalSettings.Profile.providers {
+        if err:= v.Store(tree, ""); err != nil {
+            return err
+        }
     }
 
     // AWS

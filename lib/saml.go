@@ -3,11 +3,9 @@ package ofa
 import (
     "bytes"
     "encoding/base64"
-    "encoding/json"
     "fmt"
     "strings"
 
-    "github.com/antchfx/htmlquery"
     "github.com/antchfx/xmlquery"
     "github.com/antchfx/xpath"
     "github.com/aws/aws-sdk-go/aws/arn"
@@ -60,57 +58,6 @@ func newSamlAwsRole(s string, sessionDuration int64) (*samlAwsRole, error) {
     }
 
     return result, nil
-}
-
-func Auth0SamlSession(session *LoginSession, sessionToken string) (samlResponse *string, err error) {
-    Information("**** Fetching Auth0 SAML response")
-
-    // this code does nto work. It is a placeholder until I figure out
-    // how to do this with auth0 (see https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354)
-
-    userinfoURL, err := session.Auth0.URL.Parse("/userinfo")
-    if err != nil {
-        return nil, err
-    }
-
-    response, err := auth0Get(userinfoURL.String(), &sessionToken)
-    if err != nil {
-        return nil, err
-    }
-
-    r := make(map[string]interface{}, 0)
-    err = json.Unmarshal(response, &r)
-    if err != nil {
-        return nil, err
-    }
-    log.Panicf("Result: %v", r)
-
-    return nil, nil
-}
-
-func OktaSamlSession(session *LoginSession, sessionToken string) (samlResponse *string, err error) {
-
-    Information("**** Fetching Okta SAML response")
-
-    u := session.Okta.AppURL
-    q := u.Query()
-    q.Set("sessionToken", sessionToken)
-    session.Okta.AppURL.RawQuery = q.Encode()
-
-    response, err := oktaGet(u.String())
-    if err != nil {
-        return nil, err
-    }
-
-    // yeah, this is terrible. It is also the official way according to
-    // https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint
-    // improvement wanted!
-    htmlDoc, err := htmlquery.Parse(bytes.NewReader(response))
-    if err != nil {
-        return nil, err
-    }
-
-    return toSP(samlPath.Evaluate(htmlquery.CreateXPathNavigator(htmlDoc)).(string)), nil
 }
 
 func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, error) {
