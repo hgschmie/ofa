@@ -85,7 +85,7 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
     var err error
     var ok bool
 
-    if session.Provider, ok = providers[strings.ToLower(session.ProfileType)]; ok {
+    if session.Provider, ok = providers[strings.ToLower(session.ProfileType)]; !ok {
         return nil, fmt.Errorf("Unknown profile type '%s' for '%s'", session.ProfileType, session.ProfileName)
     }
 

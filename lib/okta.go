@@ -474,6 +474,10 @@ func oktaGet(url string) ([]byte, error) {
 // Profile settings
 //
 
+func (p *OktaProfileSettings) Create() providerProfile {
+    return &OktaProfileSettings{}
+}
+
 func (p *OktaProfileSettings) Validate() error {
     return validate.Struct(p)
 }

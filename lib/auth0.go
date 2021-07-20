@@ -194,6 +194,8 @@ type Auth0Error interface {
 func (p *Auth0Session) Configure(config *LoginSession) error {
     var err error
 
+    p.config = config
+
     p.URL, err = getURL(evaluateString(labelAuth0URL,
         config.FlagConfig(FlagAuth0URL),
         config.ProfileConfig(profileKeyAuth0URL),
@@ -682,6 +684,10 @@ func auth0Get(url string, token *string) ([]byte, error) {
 //
 // Profile settings
 //
+
+func (p *Auth0ProfileSettings) Create() providerProfile {
+    return &Auth0ProfileSettings{}
+}
 
 func (p *Auth0ProfileSettings) Validate() error {
     return validate.Struct(p)

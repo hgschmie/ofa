@@ -51,10 +51,15 @@ func toBPError(b bool, err error) *bool {
 }
 
 func extractStringP(values map[string]interface{}, key string) (*string, error) {
-    if value, ok := values[key].(*string); ok {
-        return value, nil
+
+    if value, ok := values[key]; !ok {
+        return nil, nil
     } else {
-        return nil, fmt.Errorf("Could not extract '%v' field (%v)", key, values[key])
+        if stringValue, ok := value.(string); ok {
+            return toSP(stringValue), nil
+        } else {
+            return nil, fmt.Errorf("Could not extract '%v' field (%v)", key, values[key])
+        }
     }
 }
 

@@ -12,12 +12,42 @@ import (
 
 type ProfileSettings struct {
     ProfileName     *string
-    ProfileType     *string `validate:"omitempty,oneof okta auth0"`
+    ProfileType     *string `validate:"omitempty,oneof=okta auth0"`
     User            *string
     AwsRole         *string
     AwsSessionTime  *int64 `validate:"omitempty,gte=3600,lte=86400"`
     profileSettings map[string]interface{}
-    providers       map[*string]providerProfile
+    providers       map[string]providerProfile
+}
+
+func createProfileSettings(profileName *string, profileType *string) (*ProfileSettings, error) {
+    profile := &ProfileSettings{
+        ProfileName: profileName,
+    }
+
+    if err := profile.updateProfileType(profileType); err != nil {
+        return nil, err
+    }
+
+    return profile, nil
+}
+
+func (p *ProfileSettings) updateProfileType(profileType *string) error {
+    p.ProfileType = profileType
+    p.providers = make(map[string]providerProfile)
+    if p.ProfileType == nil {
+        for name, v := range providerTypes {
+            p.providers[name] = v.Create()
+        }
+    } else {
+        if provider, ok := providerTypes[*p.ProfileType]; ok {
+            p.providers[*p.ProfileType] = provider.Create()
+        } else {
+            return fmt.Errorf("Profile type '%v' for profile '%v' is unknown!", p.ProfileType, p.ProfileName)
+        }
+    }
+
+    return nil
 }
 
 var (
@@ -29,13 +59,14 @@ var (
         "Auth0": profileTypeAuth0,
     }
 
-    providerTypes = map[*string]providerProfile{
-        profileTypeOkta:  &OktaProfileSettings{},
-        profileTypeAuth0: &Auth0ProfileSettings{},
+    providerTypes = map[string]providerProfile{
+        "okta":  &OktaProfileSettings{},
+        "auth0": &Auth0ProfileSettings{},
     }
 )
 
 type providerProfile interface {
+    Create() providerProfile
     Validate() error
     Log(profileName *string)
     Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, defaultSettings map[string]interface{}) error
@@ -91,27 +122,20 @@ func ListProfiles() (*DefaultSettings, map[string]ProfileSettings) {
 }
 
 func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaultSettings ProfileSettings) (*ProfileSettings, error) {
-    profileSettings := &ProfileSettings{ProfileName: defaultSettings.ProfileName}
+    profileSettings, err := createProfileSettings(defaultSettings.ProfileName, nil)
+    if err != nil {
+        return nil, err
+    }
 
     flagConfigProvider := newFlagConfig(flags, false)
 
-    profileSettings.ProfileType = evaluateString(labelProfileType,
+    profileType := evaluateString(labelProfileType,
         flagConfigProvider(FlagSetProfileType),
         interactiveMenu(profilePrompt(rootProfileName, labelProfileType), profileTypes, defaultSettings.ProfileType))
 
     // root profile can have defaults for all profiles, anything else has only a single profile
-    if rootProfileName == nil {
-        profileSettings.providers = providerTypes
-    } else {
-        if profileSettings.ProfileType == nil {
-            return nil, fmt.Errorf("A profile type must be selected!")
-        }
-
-        if providerType, ok := providerTypes[profileSettings.ProfileType]; ok {
-            profileSettings.providers[profileSettings.ProfileType] = providerType
-        } else {
-            return nil, fmt.Errorf("Profile type '%v' for profile '%v' is unknown!", profileSettings.ProfileType, profileSettings.ProfileName)
-        }
+    if err := profileSettings.updateProfileType(profileType); err != nil {
+        return nil, err
     }
 
     profileSettings.User = evaluateString(labelUser,
@@ -239,7 +263,7 @@ func NewProfileName(flags *pflag.FlagSet) (*ProfileSettings, error) {
         }
     }
 
-    return &ProfileSettings{ProfileName: profileName}, nil
+    return createProfileSettings(profileName, nil)
 }
 
 func newProfileConfigProvider(profileName string) ConfigProvider {
@@ -282,17 +306,23 @@ func profilePrompt(profileName *string, prompt string) string {
 }
 
 func loadProfile(s *viper.Viper, profileName *string) *ProfileSettings {
-    p := &ProfileSettings{ProfileName: profileName}
+
+    var profileType *string
+    if s != nil {
+        profileType = getString(s, profileKeyProfileType)
+    }
+
+    p, err := createProfileSettings(profileName, profileType)
+    if err != nil {
+        log.Fatalf("Could not load profile '%v': %v", profileName, err)
+    }
 
     if s != nil {
-        p.ProfileName = profileName
-        p.ProfileType = getString(s, profileKeyProfileType)
         p.User = getString(s, profileKeyUser)
-        // debug
         p.profileSettings = s.AllSettings()
 
         for name, v := range p.providers {
-            err := v.Load(s.AllSettings())
+            err := v.Load(p.profileSettings)
             if err != nil {
                 log.Panicf("Could not load settings for '%v' in profile '%v': %v", name, profileName, err)
             }
