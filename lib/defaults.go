@@ -70,7 +70,7 @@ func StoreDefaultSettings(globalSettings *DefaultSettings) error {
         return err
     }
 
-    for _, v := range globalSettings.Profile.providers {
+    for _, v := range globalSettings.Profile.identityProviders {
         if err:= v.Store(tree, ""); err != nil {
             return err
         }

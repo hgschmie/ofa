@@ -18,15 +18,20 @@ func init() {
 
     loginCmd.Flags().String(ofa.FlagProfile, "", "The profile to use.")
     loginCmd.Flags().String(ofa.FlagUser, "", ofa.FlagDescUser)
+    loginCmd.Flags().String(ofa.FlagURL, "", ofa.FlagDescURL)
+
     loginCmd.Flags().String(ofa.FlagProfileType, "", ofa.FlagDescProfileType)
     loginCmd.Flags().String(ofa.FlagPassword, "", ofa.FlagDescPassword)
-    loginCmd.Flags().String(ofa.FlagOktaURL, "", ofa.FlagDescOktaURL)
-    loginCmd.Flags().String(ofa.FlagOktaAppURL, "", ofa.FlagDescOktaAppURL)
-    loginCmd.Flags().String(ofa.FlagOktaAuthMethod, "", ofa.FlagDescOktaAuthMethod)
+
+    for _, v := range ofa.IdentityProviders {
+        v.DefaultFlags(loginCmd.Flags())
+    }
+
     loginCmd.Flags().String(ofa.FlagRole, "", ofa.FlagDescRole)
     loginCmd.Flags().Int64(ofa.FlagSessionTime, 0, ofa.FlagDescSessionTime)
 
     loginCmd.Flags().BoolVar(&noSave, "eval", false, "Do not save AWS credentials, echo on stdout for eval.")
+
 }
 
 var (
@@ -46,7 +51,7 @@ var (
                 log.Fatalf("Could not create config: %v", err)
             }
 
-            var loginProvider = config.Provider
+            var loginProvider = config.IdentityProvider
 
             err = loginProvider.Validate()
             if err != nil {
@@ -58,7 +63,7 @@ var (
                 log.Fatalf("Could not log into %s: %v", config.ProfileType, err)
             }
 
-            samlResponse, err := loginProvider.InitiateSamlSession(*sessionToken)
+            samlResponse, err := loginProvider.InitiateSession(*sessionToken)
             if err != nil {
                 log.Fatalf("Could not initiate SAML session using '%s': %v", config.ProfileType, err)
             }

@@ -14,12 +14,12 @@ func init() {
     passwordCmd.AddCommand(passwordRemoveCmd)
 
     passwordSetCmd.Flags().String(ofa.FlagProfile, "", "The profile to use.")
-    passwordSetCmd.Flags().String(ofa.FlagOktaURL, "", ofa.FlagDescOktaURL)
+    passwordSetCmd.Flags().String(ofa.FlagURL, "", ofa.FlagDescURL)
     passwordSetCmd.Flags().String(ofa.FlagUser, "", ofa.FlagDescUser)
     passwordSetCmd.Flags().String(ofa.FlagPassword, "", ofa.FlagDescPassword)
 
     passwordRemoveCmd.Flags().String(ofa.FlagProfile, "", "The profile to use.")
-    passwordRemoveCmd.Flags().String(ofa.FlagOktaURL, "", ofa.FlagDescOktaURL)
+    passwordRemoveCmd.Flags().String(ofa.FlagURL, "", ofa.FlagDescURL)
     passwordRemoveCmd.Flags().String(ofa.FlagUser, "", ofa.FlagDescUser)
 }
 

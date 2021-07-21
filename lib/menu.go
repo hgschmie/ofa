@@ -33,46 +33,6 @@ func interactiveMenuSelector(label string, entries map[string]*string, defaultVa
     return entries[*result], nil
 }
 
-func auth0AuthMethodMenuSelector(label string, authFactors []auth0MfaResponse) (*auth0MfaResponse, error) {
-    m := make(map[string]*auth0MfaResponse, len(authFactors))
-    items := make([]string, len(authFactors))
-    for i, v := range authFactors {
-        m[v.String()] = &authFactors[i]
-        items[i] = v.String()
-    }
-
-    result, err := menuSelector(label, items, nil)
-    if err != nil {
-        return nil, err
-    }
-
-    if result == nil {
-        return nil, nil
-    }
-
-    return m[*result], nil
-}
-
-func oktaAuthMethodMenuSelector(label string, authFactors []oktaAuthFactor) (*oktaAuthFactor, error) {
-    m := make(map[string]*oktaAuthFactor, len(authFactors))
-    items := make([]string, len(authFactors))
-    for i, v := range authFactors {
-        m[v.String()] = &authFactors[i]
-        items[i] = v.String()
-    }
-
-    result, err := menuSelector(label, items, nil)
-    if err != nil {
-        return nil, err
-    }
-
-    if result == nil {
-        return nil, nil
-    }
-
-    return m[*result], nil
-}
-
 func awsRoleMenuSelector(label string, roles []samlAwsRole) (*samlAwsRole, error) {
     m := make(map[string]*samlAwsRole, len(roles))
     items := make([]string, len(roles))

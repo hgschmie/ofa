@@ -16,6 +16,36 @@ import (
     "github.com/manifoldco/promptui"
     "github.com/pelletier/go-toml"
     log "github.com/sirupsen/logrus"
+    "github.com/spf13/pflag"
+    "github.com/spf13/viper"
+)
+
+const (
+    // set value flags
+
+    flagSetOktaAuthMethod = "set-okta-auth-method"
+    flagSetOktaAppURL     = "set-okta-app-url"
+
+    // value flags
+
+    flagOktaAuthMethod = "okta-auth-method"
+    flagOktaAppURL     = "okta-app-url"
+
+    flagDescSetOktaAuthMethod = "Sets the Okta Auth method."
+    flagDescSetOktaAppURL     = "Sets the Okta AWS app URL."
+
+    flagDescOktaAuthMethod = "Okta Auth method to use."
+    flagDescOktaAppURL     = "Okta AWS app URL to use."
+
+    // profile config keys
+
+    profileKeyOktaAuthMethod = "okta_auth_method"
+    profileKeyOktaAppURL     = "okta_app_url"
+
+    // profile labels
+
+    labelOktaAuthMethod = "Okta auth method"
+    labelOktaAppURL     = "Okta AWS app URL"
 )
 
 var (
@@ -77,8 +107,7 @@ func init() {
  * Okta logic
  */
 
-type OktaSession struct {
-    URL        *url.URL `validate:"required,url"`
+type OktaIdentityProvider struct {
     AppURL     *url.URL `validate:"required,url"`
     AuthMethod *string  `validate:"omitempty,oneof=token sms push"`
     config     *LoginSession
@@ -86,8 +115,30 @@ type OktaSession struct {
     factorInfo *factorInfo
 }
 
+func (p *OktaIdentityProvider) name() string {
+    return "Okta"
+}
+
+func (p *OktaIdentityProvider) providerProfile() IdpProfile {
+    return &OktaProfileSettings{}
+}
+
+func (p *OktaIdentityProvider) DefaultFlags(flags *pflag.FlagSet) {
+    flags.String(flagSetOktaAppURL, "", flagDescSetOktaAppURL)
+    flags.String(flagSetOktaAuthMethod, "", flagDescSetOktaAuthMethod)
+}
+
+func (p *OktaIdentityProvider) LoginFlags(flags *pflag.FlagSet) {
+    flags.String(flagOktaAppURL, "", flagDescOktaAppURL)
+    flags.String(flagOktaAuthMethod, "", flagDescOktaAuthMethod)
+}
+
+func (p *OktaIdentityProvider) ProfileFlags(flags *pflag.FlagSet) {
+    flags.String(flagSetOktaAppURL, "", flagDescSetOktaAppURL)
+    flags.String(flagSetOktaAuthMethod, "", flagDescSetOktaAuthMethod)
+}
+
 type OktaProfileSettings struct {
-    url        *string `validate:"omitempty,url"`
     appUrl     *string `validate:"omitempty,url"`
     authMethod *string `validate:"omitempty,oneof=token sms push"`
 }
@@ -197,31 +248,14 @@ type factorInfo struct {
     Prompt     func() (string, error)
 }
 
-func (p *OktaSession) Configure(config *LoginSession) error {
+func (p *OktaIdentityProvider) Configure(config *LoginSession) error {
     var err error
 
     p.config = config
-    p.URL, err = getURL(evaluateString(labelOktaURL,
-        config.FlagConfig(FlagOktaURL),
-        config.ProfileConfig(profileKeyOktaURL),
-        config.RootConfig(profileKeyOktaURL),
-        interactiveStringValue(labelOktaURL, nil, validateURL)))
-
-    if err != nil {
-        return err
-    }
-
-    keychainConfigProvider := newKeychainEntry(p.URL)
-
-    p.config.Password = evaluateMask(labelPassword,
-        config.FlagConfig(FlagPassword),       // --password flag
-        keychainConfigProvider(p.config.User), // keychain stored password
-        interactivePasswordValue(labelPassword)) // interactive prompt
-
     p.AppURL, err = getURL(evaluateString(labelOktaAppURL,
-        config.FlagConfig(FlagOktaAppURL),
-        config.ProfileConfig(profileKeyOktaAppURL),
-        config.RootConfig(profileKeyOktaAppURL),
+        config.flagConfig(flagOktaAppURL),
+        config.profileConfig(profileKeyOktaAppURL),
+        config.rootConfig(profileKeyOktaAppURL),
         interactiveStringValue(labelOktaAppURL, nil, validateURL)))
 
     if err != nil {
@@ -229,19 +263,19 @@ func (p *OktaSession) Configure(config *LoginSession) error {
     }
 
     p.AuthMethod = evaluateString(labelOktaAuthMethod,
-        config.FlagConfig(FlagOktaAuthMethod),
-        config.ProfileConfig(profileKeyOktaAuthMethod),
-        config.RootConfig(profileKeyOktaAuthMethod),
+        config.flagConfig(flagOktaAuthMethod),
+        config.profileConfig(profileKeyOktaAuthMethod),
+        config.rootConfig(profileKeyOktaAuthMethod),
         interactiveMenu(labelOktaAuthMethod, oktaAuthMethods, nil))
 
     return validate.Struct(p)
 }
 
-func (p *OktaSession) Validate() error {
+func (p *OktaIdentityProvider) Validate() error {
     return nil
 }
 
-func (p *OktaSession) Login() (*string, error) {
+func (p *OktaIdentityProvider) Login() (*string, error) {
 
     Information("**** Logging into Okta")
 
@@ -250,7 +284,7 @@ func (p *OktaSession) Login() (*string, error) {
         return nil, err
     }
 
-    authnURL, err := p.URL.Parse("/api/v1/authn")
+    authnURL, err := p.config.URL.Parse("/api/v1/authn")
     if err != nil {
         return nil, err
     }
@@ -282,7 +316,7 @@ func (p *OktaSession) Login() (*string, error) {
     }
 }
 
-func (p *OktaSession) InitiateSamlSession(sessionToken string) (samlResponse *string, err error) {
+func (p *OktaIdentityProvider) InitiateSession(sessionToken string) (samlResponse *string, err error) {
     Information("**** Fetching Okta SAML response")
 
     u := p.AppURL
@@ -306,7 +340,7 @@ func (p *OktaSession) InitiateSamlSession(sessionToken string) (samlResponse *st
     return toSP(samlPath.Evaluate(htmlquery.CreateXPathNavigator(htmlDoc)).(string)), nil
 }
 
-func (p *OktaSession) mfaInitiate(authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
+func (p *OktaIdentityProvider) mfaInitiate(authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
     Information("**** Initiating MFA Challenge")
 
     candidates := make([]oktaAuthFactor, 0)
@@ -354,7 +388,7 @@ func (p *OktaSession) mfaInitiate(authTransaction *oktaAuthTransaction) (*oktaAu
     return authTransaction, nil
 }
 
-func (p *OktaSession) mfaChallenge(authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
+func (p *OktaIdentityProvider) mfaChallenge(authTransaction *oktaAuthTransaction) (*oktaAuthTransaction, error) {
     challengeResponse := oktaAuthVerify{StateToken: authTransaction.StateToken}
 
     // based on the result of the *previous* interaction with the API, choose an action. If the previous
@@ -397,6 +431,26 @@ func (p *OktaSession) mfaChallenge(authTransaction *oktaAuthTransaction) (*oktaA
 
     // return the result of this interaction to the state machine
     return authTransaction, nil
+}
+
+func oktaAuthMethodMenuSelector(label string, authFactors []oktaAuthFactor) (*oktaAuthFactor, error) {
+    m := make(map[string]*oktaAuthFactor, len(authFactors))
+    items := make([]string, len(authFactors))
+    for i, v := range authFactors {
+        m[v.String()] = &authFactors[i]
+        items[i] = v.String()
+    }
+
+    result, err := menuSelector(label, items, nil)
+    if err != nil {
+        return nil, err
+    }
+
+    if result == nil {
+        return nil, nil
+    }
+
+    return m[*result], nil
 }
 
 func oktaPost(url string, body []byte) ([]byte, error) {
@@ -474,7 +528,7 @@ func oktaGet(url string) ([]byte, error) {
 // Profile settings
 //
 
-func (p *OktaProfileSettings) Create() providerProfile {
+func (p *OktaProfileSettings) Create() IdpProfile {
     return &OktaProfileSettings{}
 }
 
@@ -484,56 +538,37 @@ func (p *OktaProfileSettings) Validate() error {
 
 func (p *OktaProfileSettings) Log(profileName *string) {
     logStringSetting(profilePrompt(profileName, labelOktaAuthMethod), p.authMethod)
-    logStringSetting(profilePrompt(profileName, labelOktaURL), p.url)
     logStringSetting(profilePrompt(profileName, labelOktaAppURL), p.appUrl)
 }
 
-func (p *OktaProfileSettings) Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, defaultSettings map[string]interface{}) error {
+func (p *OktaProfileSettings) Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, identityProviders map[string]IdpProfile) error {
 
-    defaults := &OktaProfileSettings{}
-    err := defaults.Load(defaultSettings)
-    if err != nil {
-        return err
+    var defaults *OktaProfileSettings
+
+    if defaultSettings, ok := identityProviders[oktaName]; ok {
+        defaults = defaultSettings.(*OktaProfileSettings)
+    } else {
+        defaults = p.Create().(*OktaProfileSettings)
     }
 
-    p.url = evaluateString(labelOktaURL,
-        flagConfigProvider(FlagSetOktaURL),
-        interactiveStringValue(profilePrompt(rootProfileName, labelOktaURL), defaults.url, validateURL))
-
     p.appUrl = evaluateString(labelOktaAppURL,
-        flagConfigProvider(FlagSetOktaAppURL),
+        flagConfigProvider(flagSetOktaAppURL),
         interactiveStringValue(profilePrompt(rootProfileName, labelOktaAppURL), defaults.appUrl, validateURL))
 
     p.authMethod = evaluateString(labelOktaAuthMethod,
-        flagConfigProvider(FlagSetOktaAuthMethod),
+        flagConfigProvider(flagSetOktaAuthMethod),
         interactiveMenu(profilePrompt(rootProfileName, labelOktaAuthMethod), oktaAuthMethods, defaults.authMethod))
 
     return nil
 }
 
-func (p *OktaProfileSettings) Load(values map[string]interface{}) error {
+func (p *OktaProfileSettings) Load(s *viper.Viper) {
 
-    var err error
-
-    p.url, err = extractStringP(values, profileKeyOktaURL)
-    if err != nil {
-        return err
-    }
-
-    p.appUrl, err = extractStringP(values, profileKeyOktaAppURL)
-    if err != nil {
-        return err
-    }
-
-    p.authMethod, err = extractStringP(values, profileKeyOktaAuthMethod)
-
-    return err
+    p.appUrl = getString(s, profileKeyOktaAppURL)
+    p.authMethod = getString(s, profileKeyOktaAuthMethod)
 }
 
 func (p *OktaProfileSettings) Store(tree *toml.Tree, prefix string) error {
-    if err := setString(tree, prefix+profileKeyOktaURL, p.url); err != nil {
-        return err
-    }
     if err := setString(tree, prefix+profileKeyOktaAppURL, p.appUrl); err != nil {
         return err
     }

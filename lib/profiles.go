@@ -11,13 +11,13 @@ import (
 )
 
 type ProfileSettings struct {
-    ProfileName     *string
-    ProfileType     *string `validate:"omitempty,oneof=okta auth0"`
-    User            *string
-    AwsRole         *string
-    AwsSessionTime  *int64 `validate:"omitempty,gte=3600,lte=86400"`
-    profileSettings map[string]interface{}
-    providers       map[string]providerProfile
+    ProfileName       *string
+    ProfileType       *string `validate:"omitempty,oneof=okta auth0"`
+    URL               *string `validate:"omitempty,url"`
+    User              *string
+    AwsRole           *string
+    AwsSessionTime    *int64 `validate:"omitempty,gte=3600,lte=86400"`
+    identityProviders map[string]IdpProfile
 }
 
 func createProfileSettings(profileName *string, profileType *string) (*ProfileSettings, error) {
@@ -34,14 +34,14 @@ func createProfileSettings(profileName *string, profileType *string) (*ProfileSe
 
 func (p *ProfileSettings) updateProfileType(profileType *string) error {
     p.ProfileType = profileType
-    p.providers = make(map[string]providerProfile)
+    p.identityProviders = make(map[string]IdpProfile)
     if p.ProfileType == nil {
-        for name, v := range providerTypes {
-            p.providers[name] = v.Create()
+        for name, v := range idpProfiles {
+            p.identityProviders[name] = v.Create()
         }
     } else {
-        if provider, ok := providerTypes[*p.ProfileType]; ok {
-            p.providers[*p.ProfileType] = provider.Create()
+        if provider, ok := idpProfiles[*p.ProfileType]; ok {
+            p.identityProviders[*p.ProfileType] = provider.Create()
         } else {
             return fmt.Errorf("Profile type '%v' for profile '%v' is unknown!", p.ProfileType, p.ProfileName)
         }
@@ -50,27 +50,12 @@ func (p *ProfileSettings) updateProfileType(profileType *string) error {
     return nil
 }
 
-var (
-    profileTypeOkta  = toSP("okta")
-    profileTypeAuth0 = toSP("auth0")
-
-    profileTypes = map[string]*string{
-        "Okta":  profileTypeOkta,
-        "Auth0": profileTypeAuth0,
-    }
-
-    providerTypes = map[string]providerProfile{
-        "okta":  &OktaProfileSettings{},
-        "auth0": &Auth0ProfileSettings{},
-    }
-)
-
-type providerProfile interface {
-    Create() providerProfile
+type IdpProfile interface {
+    Create() IdpProfile
     Validate() error
     Log(profileName *string)
-    Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, defaultSettings map[string]interface{}) error
-    Load(profileSettings map[string]interface{}) error
+    Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, identityProviders map[string]IdpProfile) error
+    Load(s *viper.Viper)
     Store(tree *toml.Tree, prefix string) error
 }
 
@@ -84,8 +69,9 @@ func (p *ProfileSettings) Display(profileName *string) {
         logStringSetting(profilePrompt(profileName, labelProfile), p.ProfileName)
     }
     logStringSetting(profilePrompt(profileName, labelUser), p.User)
+    logStringSetting(profilePrompt(profileName, labelURL), p.URL)
 
-    for _, provider := range p.providers {
+    for _, provider := range p.identityProviders {
         //err := provider.Load(p.profileSettings)
         //if err != nil {
         //    log.Fatalf("Could not load settings for '%v' in profile '%v': %v", name, profileName, err)
@@ -131,7 +117,7 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
 
     profileType := evaluateString(labelProfileType,
         flagConfigProvider(FlagSetProfileType),
-        interactiveMenu(profilePrompt(rootProfileName, labelProfileType), profileTypes, defaultSettings.ProfileType))
+        interactiveMenu(profilePrompt(rootProfileName, labelProfileType), availableIdp, defaultSettings.ProfileType))
 
     // root profile can have defaults for all profiles, anything else has only a single profile
     if err := profileSettings.updateProfileType(profileType); err != nil {
@@ -142,10 +128,14 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
         flagConfigProvider(FlagSetUser),
         interactiveStringValue(profilePrompt(rootProfileName, labelUser), defaultSettings.User, nil))
 
+    profileSettings.URL = evaluateString(labelURL,
+        flagConfigProvider(FlagSetURL),
+        interactiveStringValue(profilePrompt(rootProfileName, labelURL), defaultSettings.URL, validateURL))
+
     // login providers
 
-    for _, v := range profileSettings.providers {
-        err := v.Prompt(rootProfileName, flagConfigProvider, defaultSettings.profileSettings)
+    for _, v := range profileSettings.identityProviders {
+        err := v.Prompt(rootProfileName, flagConfigProvider, defaultSettings.identityProviders)
         if err != nil {
             return nil, err
         }
@@ -165,7 +155,7 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
         return nil, err
     }
 
-    for _, v := range profileSettings.providers {
+    for _, v := range profileSettings.identityProviders {
         err := v.Validate()
         if err != nil {
             return nil, err
@@ -189,8 +179,12 @@ func StoreProfileSettings(profileSettings *ProfileSettings) error {
         return err
     }
 
+    if err := setString(tree, prefix+profileKeyURL, profileSettings.URL); err != nil {
+        return err
+    }
+
     // providers
-    for _, v := range profileSettings.providers {
+    for _, v := range profileSettings.identityProviders {
         if err := v.Store(tree, prefix); err != nil {
             return err
         }
@@ -319,13 +313,11 @@ func loadProfile(s *viper.Viper, profileName *string) *ProfileSettings {
 
     if s != nil {
         p.User = getString(s, profileKeyUser)
-        p.profileSettings = s.AllSettings()
 
-        for name, v := range p.providers {
-            err := v.Load(p.profileSettings)
-            if err != nil {
-                log.Panicf("Could not load settings for '%v' in profile '%v': %v", name, profileName, err)
-            }
+        p.URL = getString(s, profileKeyURL)
+
+        for _, v := range p.identityProviders {
+            v.Load(s)
         }
 
         // AWS

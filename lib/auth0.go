@@ -8,13 +8,44 @@ import (
     "io/ioutil"
     "net/http"
     "net/http/cookiejar"
-    "net/url"
     "strings"
     "time"
 
     "github.com/manifoldco/promptui"
     "github.com/pelletier/go-toml"
     log "github.com/sirupsen/logrus"
+    "github.com/spf13/pflag"
+    "github.com/spf13/viper"
+)
+
+const (
+    // set value flags
+
+    flagSetAuth0AuthMethod   = "set-auth0-auth-method"
+    flagSetAuth0ClientId     = "set-auth0-client-id"
+    flagSetAuth0ClientSecret = "set-auth0-client-secret"
+
+    // value flags
+
+    flagAuth0AuthMethod   = "auth0-auth-method"
+    flagAuth0ClientId     = "auth0-client-id"
+    flagAuth0ClientSecret = "auth0-client-secret"
+
+    flagDescSetAuth0AuthMethod   = "Sets the Auth0 Auth method."
+    flagDescSetAuth0ClientId     = "Sets the Auth0 Client Id."
+    flagDescSetAuth0ClientSecret = "Sets the Auth0 Client Secret."
+
+    // profile config keys
+
+    profileKeyAuth0AuthMethod   = "auth0_auth_method"
+    profileKeyAuth0ClientId     = "auth0_client_id"
+    profileKeyAuth0ClientSecret = "auth0_client_secret"
+
+    // profile labels
+
+    labelAuth0AuthMethod   = "Auth0 auth method"
+    labelAuth0ClientId     = "Auth0 Application Client Id"
+    labelAuth0ClientSecret = "Auth0 Application Client Secret"
 )
 
 var (
@@ -113,11 +144,10 @@ func init() {
  * auth0 logic
  */
 
-type Auth0Session struct {
-    URL          *url.URL `validate:"required,url"`
-    AuthMethod   *string  `validate:"omitempty,oneof=push sms voice totp recovery-code"`
-    ClientId     *string  `validate:"required"`
-    ClientSecret *string  `validate:"required"`
+type Auth0IdentityProvider struct {
+    AuthMethod   *string `validate:"omitempty,oneof=push sms voice totp recovery-code"`
+    ClientId     *string `validate:"required"`
+    ClientSecret *string `validate:"required"`
 
     config       *LoginSession
     state        string
@@ -127,6 +157,29 @@ type Auth0Session struct {
     mfaChallenge *auth0ChallengeResponse
     authToken    *string
     response     *string
+}
+
+func (p *Auth0IdentityProvider) name() string {
+    return "Auth0 (no not use)"
+}
+
+func (p *Auth0IdentityProvider) providerProfile() IdpProfile {
+    return &Auth0ProfileSettings{}
+}
+
+func (p *Auth0IdentityProvider) DefaultFlags(flags *pflag.FlagSet) {
+    flags.String(flagSetAuth0AuthMethod, "", flagDescSetAuth0AuthMethod)
+    flags.String(flagSetAuth0ClientId, "", flagDescSetAuth0ClientId)
+    flags.String(flagSetAuth0ClientSecret, "", flagDescSetAuth0ClientSecret)
+}
+
+func (p *Auth0IdentityProvider) LoginFlags(flags *pflag.FlagSet) {
+}
+
+func (p *Auth0IdentityProvider) ProfileFlags(flags *pflag.FlagSet) {
+    flags.String(flagSetAuth0AuthMethod, "", flagDescSetAuth0AuthMethod)
+    flags.String(flagSetAuth0ClientId, "", flagDescSetAuth0ClientId)
+    flags.String(flagSetAuth0ClientSecret, "", flagDescSetAuth0ClientSecret)
 }
 
 type Auth0ProfileSettings struct {
@@ -191,57 +244,38 @@ type Auth0Error interface {
     Response() auth0ErrorResponse
 }
 
-func (p *Auth0Session) Configure(config *LoginSession) error {
-    var err error
-
+func (p *Auth0IdentityProvider) Configure(config *LoginSession) error {
     p.config = config
 
-    p.URL, err = getURL(evaluateString(labelAuth0URL,
-        config.FlagConfig(FlagAuth0URL),
-        config.ProfileConfig(profileKeyAuth0URL),
-        config.RootConfig(profileKeyAuth0URL),
-        interactiveStringValue(labelAuth0URL, nil, validateURL)))
-
-    if err != nil {
-        return err
-    }
-
-    keychainConfigProvider := newKeychainEntry(p.URL)
-
-    p.config.Password = evaluateMask(labelPassword,
-        config.FlagConfig(FlagPassword),       // --password flag
-        keychainConfigProvider(p.config.User), // keychain stored password
-        interactivePasswordValue(labelPassword)) // interactive prompt
-
     p.AuthMethod = evaluateString(labelAuth0AuthMethod,
-        config.FlagConfig(FlagAuth0AuthMethod),
-        config.ProfileConfig(profileKeyAuth0AuthMethod),
-        config.RootConfig(profileKeyAuth0AuthMethod),
+        config.flagConfig(flagAuth0AuthMethod),
+        config.profileConfig(profileKeyAuth0AuthMethod),
+        config.rootConfig(profileKeyAuth0AuthMethod),
         interactiveMenu(labelAuth0AuthMethod, auth0AuthMethods, nil))
 
     p.ClientId = evaluateString(labelAuth0ClientId,
-        config.FlagConfig(FlagAuth0ClientId),
-        config.ProfileConfig(profileKeyAuth0ClientId),
-        config.RootConfig(profileKeyAuth0ClientId),
+        config.flagConfig(flagAuth0ClientId),
+        config.profileConfig(profileKeyAuth0ClientId),
+        config.rootConfig(profileKeyAuth0ClientId),
         interactiveStringValue(labelAuth0ClientId, nil, nil))
 
     p.ClientSecret = evaluateMask(labelAuth0ClientSecret,
-        config.FlagConfig(FlagAuth0ClientSecret),
-        config.ProfileConfig(profileKeyAuth0ClientSecret),
-        config.RootConfig(profileKeyAuth0ClientSecret),
+        config.flagConfig(flagAuth0ClientSecret),
+        config.profileConfig(profileKeyAuth0ClientSecret),
+        config.rootConfig(profileKeyAuth0ClientSecret),
         interactivePasswordValue(labelAuth0ClientSecret))
 
     return validate.Struct(p)
 }
 
-func (p *Auth0Session) Validate() error {
+func (p *Auth0IdentityProvider) Validate() error {
     return nil
 }
 
 //
 // Login logs into Auth0 using username and password
 //
-func (p *Auth0Session) Login() (*string, error) {
+func (p *Auth0IdentityProvider) Login() (*string, error) {
     Information("**** Logging into Auth0")
 
     p.state = StateLogin
@@ -271,14 +305,14 @@ func (p *Auth0Session) Login() (*string, error) {
     }
 }
 
-func (p *Auth0Session) InitiateSamlSession(sessionToken string) (samlResponse *string, err error) {
+func (p *Auth0IdentityProvider) InitiateSession(sessionToken string) (samlResponse *string, err error) {
     Information("**** Fetching Auth0 SAML response")
 
     // this code does nto work. It is a placeholder until I figure out
     // how to do this with auth0 (see https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354)
 
     var samlUrl string = "/samlp/" + *p.ClientId + "?connection=Username-Password-Authentication"
-    userinfoURL, err := p.URL.Parse(samlUrl)
+    userinfoURL, err := p.config.URL.Parse(samlUrl)
     if err != nil {
         return nil, err
     }
@@ -298,9 +332,9 @@ func (p *Auth0Session) InitiateSamlSession(sessionToken string) (samlResponse *s
     return nil, nil
 }
 
-func (p *Auth0Session) auth0StateLogin() error {
+func (p *Auth0IdentityProvider) auth0StateLogin() error {
 
-    audience, err := p.URL.Parse("/api/v2/")
+    audience, err := p.config.URL.Parse("/api/v2/")
     if err != nil {
         return err
     }
@@ -319,7 +353,7 @@ func (p *Auth0Session) auth0StateLogin() error {
         return err
     }
 
-    reqUrl, err := p.URL.Parse("/oauth/token")
+    reqUrl, err := p.config.URL.Parse("/oauth/token")
     if err != nil {
         return err
     }
@@ -390,10 +424,10 @@ func (f auth0MfaResponse) String() string {
     }
 }
 
-func (p *Auth0Session) auth0StateMFAInitiate() error {
+func (p *Auth0IdentityProvider) auth0StateMFAInitiate() error {
     Information("**** Initiating MFA Challenge")
 
-    mfaFactorURL, err := p.URL.Parse("/mfa/authenticators")
+    mfaFactorURL, err := p.config.URL.Parse("/mfa/authenticators")
     if err != nil {
         return err
     }
@@ -458,7 +492,7 @@ func (p *Auth0Session) auth0StateMFAInitiate() error {
 }
 
 // prompt the user for input. Can be OTP challenge, recovery code or SMS/Voice response
-func (p *Auth0Session) auth0StateMFAPrompt() error {
+func (p *Auth0IdentityProvider) auth0StateMFAPrompt() error {
     if p.factorInfo.Prompt == nil {
         return fmt.Errorf("Received Auth0 Challenge but %s does not support challenging!", p.mfaFactor.Id)
     }
@@ -474,7 +508,7 @@ func (p *Auth0Session) auth0StateMFAPrompt() error {
 }
 
 // issue a challenge to the user. This triggers sending a push / sms / voice call
-func (p *Auth0Session) auth0StateMFAChallenge() error {
+func (p *Auth0IdentityProvider) auth0StateMFAChallenge() error {
 
     reqBody, err := json.Marshal(auth0ChallengeRequest{
         MfaToken:        *p.mfaToken,
@@ -488,7 +522,7 @@ func (p *Auth0Session) auth0StateMFAChallenge() error {
         return err
     }
 
-    reqUrl, err := p.URL.Parse("/mfa/challenge")
+    reqUrl, err := p.config.URL.Parse("/mfa/challenge")
     if err != nil {
         return err
     }
@@ -518,7 +552,7 @@ func (p *Auth0Session) auth0StateMFAChallenge() error {
 // - from challenge if push was used
 // - from prompt if otp was used
 //
-func (p *Auth0Session) auth0StateMFAVerify() error {
+func (p *Auth0IdentityProvider) auth0StateMFAVerify() error {
 
     req := auth0TokenRequest{
         GrantType:    p.factorInfo.GrantType,
@@ -542,7 +576,7 @@ func (p *Auth0Session) auth0StateMFAVerify() error {
         return err
     }
 
-    authnURL, err := p.URL.Parse("/oauth/token")
+    authnURL, err := p.config.URL.Parse("/oauth/token")
 
     if err != nil {
         return err
@@ -581,6 +615,26 @@ func (p *Auth0Session) auth0StateMFAVerify() error {
         p.state = StateSuccess
         return nil
     }
+}
+
+func auth0AuthMethodMenuSelector(label string, authFactors []auth0MfaResponse) (*auth0MfaResponse, error) {
+    m := make(map[string]*auth0MfaResponse, len(authFactors))
+    items := make([]string, len(authFactors))
+    for i, v := range authFactors {
+        m[v.String()] = &authFactors[i]
+        items[i] = v.String()
+    }
+
+    result, err := menuSelector(label, items, nil)
+    if err != nil {
+        return nil, err
+    }
+
+    if result == nil {
+        return nil, nil
+    }
+
+    return m[*result], nil
 }
 
 //
@@ -685,7 +739,7 @@ func auth0Get(url string, token *string) ([]byte, error) {
 // Profile settings
 //
 
-func (p *Auth0ProfileSettings) Create() providerProfile {
+func (p *Auth0ProfileSettings) Create() IdpProfile {
     return &Auth0ProfileSettings{}
 }
 
@@ -695,64 +749,42 @@ func (p *Auth0ProfileSettings) Validate() error {
 
 func (p *Auth0ProfileSettings) Log(profileName *string) {
     logStringSetting(profilePrompt(profileName, labelAuth0AuthMethod), p.authMethod)
-    logStringSetting(profilePrompt(profileName, labelAuth0URL), p.url)
     logStringSetting(profilePrompt(profileName, labelAuth0ClientId), p.clientId)
 }
 
-func (p *Auth0ProfileSettings) Load(values map[string]interface{}) error {
+func (p *Auth0ProfileSettings) Load(s *viper.Viper) {
 
-    var err error
-
-    p.url, err = extractStringP(values, profileKeyAuth0URL)
-    if err != nil {
-        return err
-    }
-
-    p.authMethod, err = extractStringP(values, profileKeyAuth0AuthMethod)
-    if err != nil {
-        return err
-    }
-
-    p.clientId, err = extractStringP(values, profileKeyAuth0ClientId)
-    if err != nil {
-        return err
-    }
-
-    p.clientSecret, err = extractStringP(values, profileKeyAuth0ClientSecret)
-    return err
+    p.authMethod = getString(s, profileKeyAuth0AuthMethod)
+    p.clientId = getString(s, profileKeyAuth0ClientId)
+    p.clientSecret = getString(s, profileKeyAuth0ClientSecret)
 }
 
-func (p *Auth0ProfileSettings) Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, defaultSettings map[string]interface{}) error {
+func (p *Auth0ProfileSettings) Prompt(rootProfileName *string, flagConfigProvider ConfigProvider, identityProviders map[string]IdpProfile) error {
 
-    defaults := &Auth0ProfileSettings{}
-    err := defaults.Load(defaultSettings)
-    if err != nil {
-        return err
+    var defaults *Auth0ProfileSettings
+
+    if defaultSettings, ok := identityProviders[auth0Name]; ok {
+        defaults = defaultSettings.(*Auth0ProfileSettings)
+    } else {
+        defaults = p.Create().(*Auth0ProfileSettings)
     }
 
-    p.url = evaluateString(labelAuth0URL,
-        flagConfigProvider(FlagSetAuth0URL),
-        interactiveStringValue(profilePrompt(rootProfileName, labelAuth0URL), defaults.url, validateURL))
-
     p.authMethod = evaluateString(labelAuth0AuthMethod,
-        flagConfigProvider(FlagSetAuth0AuthMethod),
+        flagConfigProvider(flagSetAuth0AuthMethod),
         interactiveMenu(profilePrompt(rootProfileName, labelAuth0AuthMethod), auth0AuthMethods, defaults.authMethod))
 
     p.clientId = evaluateString(labelAuth0ClientId,
-        flagConfigProvider(FlagSetAuth0ClientId),
+        flagConfigProvider(flagSetAuth0ClientId),
         interactiveStringValue(profilePrompt(rootProfileName, labelAuth0ClientId), defaults.clientId, nil))
 
     p.clientSecret = evaluateString(labelAuth0ClientSecret,
-        flagConfigProvider(FlagSetAuth0ClientSecret),
+        flagConfigProvider(flagSetAuth0ClientSecret),
         interactiveStringValue(profilePrompt(rootProfileName, labelAuth0ClientSecret), defaults.clientSecret, nil))
 
     return nil
 }
 
 func (p *Auth0ProfileSettings) Store(tree *toml.Tree, prefix string) error {
-    if err := setString(tree, prefix+profileKeyAuth0URL, p.url); err != nil {
-        return err
-    }
     if err := setString(tree, prefix+profileKeyAuth0AuthMethod, p.authMethod); err != nil {
         return err
     }

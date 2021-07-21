@@ -40,11 +40,11 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
 
     var err error
 
-    keychainEntry.URL, err = getURL(evaluateString(labelOktaURL,
-        flagConfigProvider(FlagOktaURL),
-        profileConfigProvider(profileKeyOktaURL),
-        rootConfigProvider(profileKeyOktaURL),
-        interactiveStringValue(labelOktaURL, nil, validateURL)))
+    keychainEntry.URL, err = getURL(evaluateString(labelURL,
+        flagConfigProvider(FlagURL),
+        profileConfigProvider(profileKeyURL),
+        rootConfigProvider(profileKeyURL),
+        interactiveStringValue(labelURL, nil, validateURL)))
 
     if err != nil {
         return nil, err

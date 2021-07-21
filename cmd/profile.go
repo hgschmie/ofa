@@ -20,19 +20,11 @@ func init() {
     profileCreateCmd.Flags().String(ofa.FlagProfile, "", "The profile to create.")
     profileCreateCmd.Flags().String(ofa.FlagSetProfileType, "", ofa.FlagDescSetProfileType)
     profileCreateCmd.Flags().String(ofa.FlagSetUser, "", ofa.FlagDescSetUser)
+    profileCreateCmd.Flags().String(ofa.FlagSetURL, "", ofa.FlagDescSetURL)
 
-    // Okta
-
-    profileCreateCmd.Flags().String(ofa.FlagSetOktaURL, "", ofa.FlagDescSetOktaURL)
-    profileCreateCmd.Flags().String(ofa.FlagSetOktaAppURL, "", ofa.FlagDescSetOktaAppURL)
-    profileCreateCmd.Flags().String(ofa.FlagSetOktaAuthMethod, "", ofa.FlagDescSetOktaAuthMethod)
-
-    // auth0
-
-    profileCreateCmd.Flags().String(ofa.FlagSetAuth0URL, "", ofa.FlagDescSetAuth0URL)
-    profileCreateCmd.Flags().String(ofa.FlagSetAuth0AuthMethod, "", ofa.FlagDescSetAuth0AuthMethod)
-    profileCreateCmd.Flags().String(ofa.FlagSetAuth0ClientId, "", ofa.FlagDescSetAuth0ClientId)
-    profileCreateCmd.Flags().String(ofa.FlagSetAuth0ClientSecret, "", ofa.FlagDescSetAuth0ClientSecret)
+    for _, v := range ofa.IdentityProviders {
+        v.ProfileFlags(profileCreateCmd.Flags())
+    }
 
     // AWS
 
@@ -43,19 +35,11 @@ func init() {
 
     profileUpdateCmd.Flags().String(ofa.FlagProfile, "", "The profile to edit.")
     profileUpdateCmd.Flags().String(ofa.FlagSetUser, "", ofa.FlagDescSetUser)
+    profileUpdateCmd.Flags().String(ofa.FlagSetURL, "", ofa.FlagDescSetURL)
 
-    // Okta
-
-    profileUpdateCmd.Flags().String(ofa.FlagSetOktaURL, "", ofa.FlagDescSetOktaURL)
-    profileUpdateCmd.Flags().String(ofa.FlagSetOktaAppURL, "", ofa.FlagDescSetOktaAppURL)
-    profileUpdateCmd.Flags().String(ofa.FlagSetOktaAuthMethod, "", ofa.FlagDescSetOktaAuthMethod)
-
-    // auth0
-
-    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0URL, "", ofa.FlagDescSetAuth0URL)
-    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0AuthMethod, "", ofa.FlagDescSetAuth0AuthMethod)
-    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0ClientId, "", ofa.FlagDescSetAuth0ClientId)
-    profileUpdateCmd.Flags().String(ofa.FlagSetAuth0ClientSecret, "", ofa.FlagDescSetAuth0ClientSecret)
+    for _, v := range ofa.IdentityProviders {
+        v.ProfileFlags(profileUpdateCmd.Flags())
+    }
 
     // AWS
 
