@@ -53,8 +53,8 @@ var (
 
             var loginProvider = config.IdentityProvider
 
-            err = loginProvider.Validate()
-            if err != nil {
+
+            if err = loginProvider.Validate(); err != nil {
                 log.Fatalf("Could not validate config: #{err}")
             }
 

@@ -1,16 +1,18 @@
 package ofa
 
 const (
-    oktaName  = "okta"
-    auth0Name = "auth0"
+    oktaName     = "okta"
+    auth0Name    = "auth0"
+    oneloginName = "onelogin"
 
-    allAuthTypes = "(" + oktaName + ", " + auth0Name + ")"
+    allAuthTypes = "(" + oktaName + ", " + auth0Name + ", " + oneloginName + ")"
 )
 
 var (
     IdentityProviders = map[string]identityProvider{
-        oktaName:  &OktaIdentityProvider{},
-        auth0Name: &Auth0IdentityProvider{},
+        oktaName:     &OktaIdentityProvider{},
+        auth0Name:    &Auth0IdentityProvider{},
+        oneloginName: &OneloginIdentityProvider{},
     }
 
     idpProfiles  map[string]IdpProfile

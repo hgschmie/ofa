@@ -25,7 +25,7 @@ type LoginSession struct {
     URL            *url.URL `validate:"required,url"`
     User           string   `validate:"required"`
     Password       *string  `validate:"required"`
-    ProfileType    string   `validate:"required,oneof=okta auth0"`
+    ProfileType    string   `validate:"required,oneof=okta auth0 onelogin"`
     AwsRole        *string  `validate:"omitempty"`
     AwsSessionTime *int64   `validate:"omitempty,gte=3600,lte=86400"` // one hour to one day
 

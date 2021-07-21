@@ -12,7 +12,7 @@ import (
 
 type ProfileSettings struct {
     ProfileName       *string
-    ProfileType       *string `validate:"omitempty,oneof=okta auth0"`
+    ProfileType       *string `validate:"omitempty,oneof=okta auth0 onelogin"`
     URL               *string `validate:"omitempty,url"`
     User              *string
     AwsRole           *string
