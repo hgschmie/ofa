@@ -1,35 +1,37 @@
-# ofa - Manage AWS IAM Roles when using Okta as an IdP
+# ofa - Manage AWS IAM Roles when using an IdP
 
-Command line access to Okta Authentication and AWS IAM role assignment
+Command line access to IdP Authentication and AWS IAM role assignment
 without a browser.
 
+## State of IdPs
 
-## Prerequisite: Setting up Okta and AWS
+* Okta - Supported, Functional
+* OneLogin - Supported, Functional
+* Auth0 - Partially supported, Not functional
 
-The `ofa` tool assumes that your Okta/AWS setup is using the "AWS Account Federation"
-Okta application (see https://www.okta.com/integrations/aws-account-federation/ for details.
+### Okta
 
-This requires a regular Okta account or at least an Okta trial account; developer accounts do not allow installation of applications.
+The Okta code is brittle as it requires to use a semi-documented (https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint)
+way to create the necessary SAML Assertion.
 
+### Onelogin
 
-## Prerequisite: Okta information
+Only documented APIs are used. Does not support all available authentication methods (patches for WebAuthn wanted!) 
 
-The `ofa` tool requires information about the Okta setup:
+### Auth0
 
-* The "Okta organization URL": This is the main entrypoint, usually `https://<company name>.okta.com/`
+**Auth0 does not work**. It seems to be impossible to create a SAML Assertion from a token (see https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354). 
 
-* One or more "Okta app URLs": After logging into the Okta organization URL above, hover over the AWS application icon in the web view and selecting "Copy Link Address" in the browser. Stripping the query section (`?fromHome=true`) from this URL gives the Okta app URL.
+## Usage
 
+### For all IdPs
 
-## Overview
-
-`ofa` manages global settings and profiles to log into okta and assume an AWS role.
+`ofa` manages global settings and profiles to log into an IdP and assume an AWS role.
 
 Each profile contains
 
-* Okta login
-* Okta authentication method (Supported: `push`, `sms` and `token`)
-* Okta organization and app URLs
+* IdP Type and configuration
+* Login information and authentication method
 * AWS role to assume
 * AWS session time
 
@@ -40,10 +42,10 @@ Each profile contains
 * global settings
 * interactive prompt (if running in interactive mode)
 
-profile selection happens through a default profile setting or a command line flag.
+profile selection happens through a default profile setting, or a command line flag.
 
 
-### commands and flags
+#### commands and flags
 
 The `ofa` application supports the `--help` flag and the `help` command everywhere.
 
@@ -59,7 +61,7 @@ The `ofa` application supports the `--help` flag and the `help` command everywhe
 
 The `ofa version` command displays the version and build information.
 
-#### global flags
+##### global flags
 
 Every `ofa` command supports the following global flags:
 
@@ -99,28 +101,28 @@ ofa --set-interactive=false --batch
 `ofa` manages the default state of the `interactive` and `verbose` flags and provides default settings for:
 
 * profile name (which profile to use unless overridden by a command line parameter)
-* Okta username
-* Okta authentication method (`push`, `sms` or `token`)
-* Okta organization URL
-* Okta app URL
+* Username
+* IdP type and authentication method
+* Base/Organization URL
+* IdP specific settings
 * AWS role to assume
 * AWS session time
 
 
 ### ofa profile command
 
-`ofa` can manage multiple profiles for logging into Okta and AWS. Profiles are independent and can refer to multiple Okta and AWS accounts.
+`ofa` can manage multiple profiles for logging into AWS using an IdP. Profiles are independent and can refer to multiple IdP and AWS accounts.
 
 Each profile may consist of
 
-* Okta Username
-* Okta authentication method (`push`, `sms` or `token`)
-* Okta organization URL (e.g. `https://<organization>.okta.com/`)
-* Okta app URL (see above)
+* Username
+* IdP type and authentication method
+* Base/Organization URL
+* IdP specific settings
 * AWS role to assume
 * AWS session time
 
-All parameters are optional, the tool may fall back to defaults or prompt in interactive mode.
+All parameters are optional, the tool may fall back to its defaults or prompt in interactive mode.
 
 The `ofa profile list` command lists all available profiles. Verbose mode shows all profile parameters, quiet mode only the names of the profiles.
 
@@ -135,7 +137,7 @@ The `ofa profile delete` command removes an existing profile.
 
 On supported systems (MacOS has been tested, Linux should work as well), `ofa` can store passwords in the user specific keychain.
 
-As Okta is a single signon system, each combination of Okta organization URL and login is unique even if used in multiple profiles.
+IdPs are single signon systems and identified by the Base/Organization URL, so each combination of this URL and a login is unique, even if used in multiple profiles.
 
 `ofa password set` sets a password in the keychain, `ofa password remove` removes it. The `set` command will override an existing password.
 
@@ -145,7 +147,7 @@ Note that the keychain might prompt (with a modal dialog) when using a password.
 
 ### ofa login command
 
-The `ofa login` command authenticates using Okta and then uses the information to log into AWS, assume a role and create credentials.
+The `ofa login` command authenticates using the selected IdP and then uses the information to log into AWS, assume a role and create credentials.
 
 This command uses all available sources (command line parameters, profile settings, default settings and interactive input).
 
@@ -154,26 +156,45 @@ A successful login and role selection creates a new set of AWS credentials. Thes
 Writing the credentials file can be avoided by using the `--eval` flag. In this case, `ofa` prints output that can be evaluated in the calling shell.
 
 
+## Using Okta
 
-## Examples
+### Prerequisite: Setting up Okta and AWS
+
+The `ofa` tool assumes that your Okta/AWS setup is using the "AWS Account Federation"
+Okta application (see https://www.okta.com/integrations/aws-account-federation/ for details.
+
+This requires a regular Okta account or at least an Okta trial account; developer accounts do not allow installation of applications.
+
+### Okta configuration reference
+
+| Key | Flag | Function |
+| --- | ---- | -------- |
+| `url` | `--set-url` <br> `--url` | Base/Organization URL.  |
+| `okta_app_url` | `--set-okta-app-url` <br> `--okta-app-url` | Application URL. See below. |
+| `okta_auth_method` | `--set-okta-auth-method` <br> `--auth-method` | Supported methods are  `push`, `sms` and `token`. | 
+
+* Use the `Okta organization URL`, usually `https://<company name>.okta.com/` as the Base/Organization URL.
+* Locate the application URL by logging into the Okta organization, then hover over the AWS application icon in the web view and selecting "Copy Link Address" in the browser. Stripping the query section (`?fromHome=true`) from this URL gives the Okta application URL.
+
+### Okta Example
 
 * Set up defaults and a profile:
 
 ```
-ofa defaults set --set-user=<okta user name> --set-auth-method=push --set-okta-url=https://<organization>.okta.com/ --set-session-time=14400 --batch
+ofa defaults set --set-user=<user name> --set-okta-auth-method=push --set-url=https://<organization>.okta.com/ --set-session-time=14400 --batch
 ```
 
-When using with a single Okta instance, username, authentication method and Okta URL will always be the same. Setting them as default makes profile generation simpler.
+Create defaults for using Okta as IdP. When using a single Okta instance, the username, authentication method and Okta URL will always be the same. Setting them as default makes profile generation simpler.
 
 ```
 ofa password set
 ```
 
-As Okta URL and username exist as defaults, this command only prompts for the password and stores it in the keychain.
+As URL and username exist as defaults, this command only prompts for the password and stores it in the keychain.
 
 
 ```
-ofa profile create --profile=new_profile --set-role=<aws role to assume> --set-okta-app-url=<... okta aws app url from above ...> --batch
+ofa profile create --profile=new_profile --set-profile-type=okta --set-role=<aws role to assume> --set-okta-app-url=<... okta aws app url as described below ...> --batch
 ```
 
 This command assigns the remaining, profile specific settings to the `new_profile` profile.
@@ -189,7 +210,7 @@ Make the new profile the default unless there is a profile name set with a param
 ofa login
 ```
 
-will initiate an Okta login, assume the role in the `new_profile` profile and write AWS credentials in the `[new_profile]` section of the AWS credentials file.
+will initiate a login using the default IdP (Okta configured as described below), assume the role in the `new_profile` profile and write AWS credentials in the `[new_profile]` section of the AWS credentials file.
 
 ```
 eval $(ofa login --eval)
@@ -201,7 +222,7 @@ allows setting of environment variables without touching the AWS credentials fil
 * Set up a second profile:
 
 ```
-ofa profile create --profile=dev --set-okta-app-url=<... okta aws app url from above ...> --batch
+ofa profile create --profile=dev --set-profile-type=okta --set-okta-app-url=<... okta aws app url as described below ...> --batch
 ```
 
 Unlike the previous profile, this one does not contain an AWS role. If Okta returns more than one role, `ofa` will prompt:
@@ -214,8 +235,9 @@ INFO Verbose:                  true (default value)
 INFO Interactive:              true (default value)
 INFO **** Login Session:
 INFO Profile name:             dev (flag: 'profile')
-INFO Okta username:            <okta user name> (global config, key: 'okta_user')
-INFO Okta organization URL:    https://<organization>.okta.com/ (global config, key: 'okta_url')
+INFO Okta username:            <okta user name> (global config, key: 'user')
+INFO Profile type:             okta (profile [dev], key: 'profile_type')
+INFO Base/organization URL:    https://<organization>.okta.com/ (global config, key: 'url')
 INFO Okta password:            <configured> (Keychain for Okta URL 'https://<organization>.okta.com/', username '<okta user name>')
 INFO Okta AWS app URL:         <... okta app url ...> (profile [dev], key: 'okta_app_url')
 INFO Okta auth method:         push (global config, key: 'okta_auth_method')
@@ -233,7 +255,9 @@ INFO **** Selecting AWS role from SAML response
 
 after selecting a role, `ofa` writes credentials in the AWS credentials file and exits.
 
+---
 
 #### NOTE ABOUT MACOS CODE SIGNING
 
 ofa binaries for MacOS are (for now) not signed. Starting with MacOS 10.15, MacOS will complain (and refuse to open the binary). Go to "Security & Privacy" in preferences, choose the "General" tab and click on "Allow anyway" the first time that this happens. Afterwards, ofa can be used normally. See https://github.com/hashicorp/terraform/issues/23033#issuecomment-542302933 for more details.
+
