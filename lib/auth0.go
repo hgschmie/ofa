@@ -58,7 +58,7 @@ var (
         "<unset>":                            nil,
     }
 
-    jar         *cookiejar.Jar
+    auth0Jar         *cookiejar.Jar
     auth0Client *http.Client
 
     auth0Types = map[string]*auth0FactorInfo{
@@ -122,21 +122,12 @@ var (
     }
 )
 
-const (
-    StateLogin        = "LOGIN"
-    StateSuccess      = "SUCCESS"
-    StateMfaRequired  = "MFA_REQUIRED"
-    StateMfaChallenge = "MFA_CHALLENGE"
-    StateMfaPrompt    = "MFA_PROMPT"
-    StateMfaVerify    = "MFA_VERIFY"
-)
-
 func init() {
-    jar, _ = cookiejar.New(
+    auth0Jar, _ = cookiejar.New(
         &cookiejar.Options{})
 
     auth0Client = &http.Client{
-        Jar: jar,
+        Jar: auth0Jar,
     }
 }
 
@@ -673,6 +664,7 @@ func auth0AuthError(response *http.Response, responseBody []byte) error {
 
     return &errorResponse
 }
+
 func auth0Post(url string, body []byte) ([]byte, error) {
 
     req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
@@ -788,11 +780,14 @@ func (p *Auth0ProfileSettings) Store(tree *toml.Tree, prefix string) error {
     if err := setString(tree, prefix+profileKeyAuth0AuthMethod, p.authMethod); err != nil {
         return err
     }
+
     if err := setString(tree, prefix+profileKeyAuth0ClientId, p.clientId); err != nil {
         return err
     }
+
     if err := setString(tree, prefix+profileKeyAuth0ClientSecret, p.clientSecret); err != nil {
         return err
     }
+
     return nil
 }

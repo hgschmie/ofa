@@ -6,6 +6,16 @@ const (
     oneloginName = "onelogin"
 
     allAuthTypes = "(" + oktaName + ", " + auth0Name + ", " + oneloginName + ")"
+
+    // state machine constants
+
+    StateLogin        = "LOGIN"
+    StateSuccess      = "SUCCESS"
+    StateMfaRequired  = "MFA_REQUIRED"
+    StateMfaChallenge = "MFA_CHALLENGE"
+    StateMfaPrompt    = "MFA_PROMPT"
+    StateMfaVerify    = "MFA_VERIFY"
+    StateSamlAssert   = "SAML_ASSERT"
 )
 
 var (

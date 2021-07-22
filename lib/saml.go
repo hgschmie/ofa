@@ -17,21 +17,30 @@ var (
     sessionPath *xpath.Expr
 )
 
+const (
+    samlNs                 = "urn:oasis:names:tc:SAML:2.0:assertion"
+    samlAssertion          = "*[namespace-uri()='" + samlNs + "' and local-name()='Assertion']"
+    samlAttributeStatement = "*[namespace-uri()='" + samlNs + "' and local-name()='AttributeStatement']"
+    samlAttribute          = "*[namespace-uri()='" + samlNs + "' and local-name()='Attribute']"
+    samlAttributeValue     = "*[namespace-uri()='" + samlNs + "' and local-name()='AttributeValue']"
+)
+
 func init() {
     var err error
-    rolePath, err = xpath.Compile("//saml2:Assertion/saml2:AttributeStatement/saml2:Attribute[@Name='https://aws.amazon.com/SAML/Attributes/Role']/saml2:AttributeValue")
+
+    rolePath, err = xpath.Compile("//" + samlAssertion + "/" + samlAttributeStatement + "/" + samlAttribute + "[@Name='https://aws.amazon.com/SAML/Attributes/Role']/" + samlAttributeValue)
     if err != nil {
         log.Panic("Error compile role path!")
     }
-    sessionPath, err = xpath.Compile("number(//saml2:Assertion/saml2:AttributeStatement/saml2:Attribute[@Name='https://aws.amazon.com/SAML/Attributes/SessionDuration']/saml2:AttributeValue)")
+    sessionPath, err = xpath.Compile("number(//" + samlAssertion + "/" + samlAttributeStatement + "/" + samlAttribute + "[@Name='https://aws.amazon.com/SAML/Attributes/SessionDuration']/" + samlAttributeValue + ")")
     if err != nil {
         log.Panic("Error compile session path!")
     }
 }
 
 type samlAwsRole struct {
-    PrincipalArn arn.ARN
-    RoleArn      arn.ARN
+    PrincipalArn *arn.ARN
+    RoleArn      *arn.ARN
     SessionTime  int64 // The SAML Request contains a session time, but this is not usable as the AWS roles may be configured to a different max session duration.
 }
 
@@ -41,20 +50,29 @@ func (role samlAwsRole) String() string {
 
 func newSamlAwsRole(s string, sessionDuration int64) (*samlAwsRole, error) {
     roleText := strings.Split(s, ",")
-    if len(roleText) != 2 {
+    if len(roleText) < 2 {
         return nil, fmt.Errorf("Found bad role text: %s", roleText)
     }
 
-    var err error
     result := &samlAwsRole{SessionTime: sessionDuration}
 
-    result.PrincipalArn, err = arn.Parse(roleText[0])
-    if err != nil {
-        return nil, err
+    for _, role := range roleText {
+        arn, err := arn.Parse(role)
+        if err != nil {
+            return nil, err
+        }
+        if strings.HasPrefix(arn.Resource, "role/") {
+            result.RoleArn = &arn
+        } else if strings.HasPrefix(arn.Resource, "saml-provider/") {
+            result.PrincipalArn = &arn
+        }
     }
-    result.RoleArn, err = arn.Parse(roleText[1])
-    if err != nil {
-        return nil, err
+
+    if result.PrincipalArn == nil {
+        return nil, fmt.Errorf("No principal (saml-provider) ARN found (%s)", s)
+    }
+    if result.RoleArn == nil {
+        return nil, fmt.Errorf("No role ARN found (%s)", s)
     }
 
     return result, nil
@@ -74,7 +92,9 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, e
         return nil, err
     }
 
-    roles := rolePath.Select(xmlquery.CreateXPathNavigator(xmlDoc))
+    query := xmlquery.CreateXPathNavigator(xmlDoc)
+
+    roles := rolePath.Select(query)
 
     sessionDuration := int64(sessionPath.Evaluate(xmlquery.CreateXPathNavigator(xmlDoc)).(float64))
 
