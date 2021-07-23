@@ -35,6 +35,10 @@ const (
     flagDescSetAuth0ClientId     = "Sets the Auth0 Client Id."
     flagDescSetAuth0ClientSecret = "Sets the Auth0 Client Secret."
 
+    flagDescAuth0AuthMethod   = "The Auth0 Auth method to use."
+    flagDescAuth0ClientId     = "The Auth0 Client Id to use."
+    flagDescAuth0ClientSecret = "The Auth0 Client Secret to use."
+
     // profile config keys
 
     profileKeyAuth0AuthMethod   = "auth0_auth_method"
@@ -152,26 +156,23 @@ type Auth0IdentityProvider struct {
 }
 
 func (p *Auth0IdentityProvider) name() string {
-    return "Auth0 (no not use)"
+    return "_Auth0 (DO NOT USE)"
 }
 
 func (p *Auth0IdentityProvider) providerProfile() IdpProfile {
     return &Auth0ProfileSettings{}
 }
 
-func (p *Auth0IdentityProvider) DefaultFlags(flags *pflag.FlagSet) {
+func (p *Auth0IdentityProvider) ConfigurationFlags(flags *pflag.FlagSet) {
     flags.String(flagSetAuth0AuthMethod, "", flagDescSetAuth0AuthMethod)
     flags.String(flagSetAuth0ClientId, "", flagDescSetAuth0ClientId)
     flags.String(flagSetAuth0ClientSecret, "", flagDescSetAuth0ClientSecret)
 }
 
-func (p *Auth0IdentityProvider) LoginFlags(flags *pflag.FlagSet) {
-}
-
-func (p *Auth0IdentityProvider) ProfileFlags(flags *pflag.FlagSet) {
-    flags.String(flagSetAuth0AuthMethod, "", flagDescSetAuth0AuthMethod)
-    flags.String(flagSetAuth0ClientId, "", flagDescSetAuth0ClientId)
-    flags.String(flagSetAuth0ClientSecret, "", flagDescSetAuth0ClientSecret)
+func (p *Auth0IdentityProvider) OverrideFlags(flags *pflag.FlagSet) {
+    flags.String(flagAuth0AuthMethod, "", flagDescAuth0AuthMethod)
+    flags.String(flagAuth0ClientId, "", flagDescAuth0ClientId)
+    flags.String(flagAuth0ClientSecret, "", flagDescAuth0ClientSecret)
 }
 
 type Auth0ProfileSettings struct {

@@ -42,12 +42,10 @@ type identityProvider interface {
     name() string
     providerProfile() IdpProfile
 
-    // DefaultFlags contributes default flags
-    DefaultFlags(flags *pflag.FlagSet)
-    // LoginFlags contributes flags to the login command
-    LoginFlags(flags *pflag.FlagSet)
-    // ProfileFlags contributes flags to the profile commands
-    ProfileFlags(flags *pflag.FlagSet)
+    // Flags for permanently settings IdP settings
+    ConfigurationFlags(flags *pflag.FlagSet)
+    // Flags for overriding IdP settings
+    OverrideFlags(flags *pflag.FlagSet)
 }
 
 //

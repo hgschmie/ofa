@@ -84,6 +84,7 @@ func menuSelector(label string, items []string, defaultValue *string) (*string, 
     }
 
     prompt := promptui.Select{
+        Size:      8,
         Label:     label,
         Items:     items,
         CursorPos: cursorPos,

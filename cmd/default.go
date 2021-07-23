@@ -20,7 +20,7 @@ func init() {
     defaultSetCmd.Flags().String(ofa.FlagSetURL, "", ofa.FlagDescSetURL)
 
     for _, v := range ofa.IdentityProviders {
-        v.DefaultFlags(defaultSetCmd.Flags())
+        v.ConfigurationFlags(defaultSetCmd.Flags())
     }
 
     defaultSetCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)

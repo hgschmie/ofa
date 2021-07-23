@@ -23,7 +23,7 @@ func init() {
     profileCreateCmd.Flags().String(ofa.FlagSetURL, "", ofa.FlagDescSetURL)
 
     for _, v := range ofa.IdentityProviders {
-        v.ProfileFlags(profileCreateCmd.Flags())
+        v.ConfigurationFlags(profileCreateCmd.Flags())
     }
 
     // AWS
@@ -38,7 +38,7 @@ func init() {
     profileUpdateCmd.Flags().String(ofa.FlagSetURL, "", ofa.FlagDescSetURL)
 
     for _, v := range ofa.IdentityProviders {
-        v.ProfileFlags(profileUpdateCmd.Flags())
+        v.ConfigurationFlags(profileUpdateCmd.Flags())
     }
 
     // AWS
@@ -108,8 +108,10 @@ var (
         Run: func(cmd *cobra.Command, args []string) {
 
             profile := ofa.SelectProfile(cmd.Flags())
+
             if profile == nil || profile.ProfileName == nil {
-                log.Fatal("Could not select profile")
+                // could not select the profile. Try creation
+                profileCreateCmd.Run(cmd, args)
             } else {
 
                 ofa.Information("*** Editing profile '%s'", *profile.ProfileName)

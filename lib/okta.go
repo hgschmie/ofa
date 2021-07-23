@@ -55,7 +55,7 @@ var (
     oktaAuthMethods = map[string]*string{
         "Push Notification":                  toSP("push"),
         "Text Message":                       toSP("sms"),
-        "TOTP (Google Authenticator, Authy)": toSP("token"),
+        "TOTP (Google Authenticator, Authy)": toSP("totp"),
         "<unset>":                            nil,
     }
 
@@ -71,7 +71,7 @@ var (
                 return result, err
             },
         },
-        "token:software:totp": {"token",
+        "token:software:totp": {"totp",
             func() (string, error) {
                 prompt := promptui.Prompt{
                     Label: "Enter OTP Challenge",
@@ -109,7 +109,7 @@ func init() {
 
 type OktaIdentityProvider struct {
     AppURL     *url.URL `validate:"required,url"`
-    AuthMethod *string  `validate:"omitempty,oneof=token sms push"`
+    AuthMethod *string  `validate:"omitempty,oneof=totp sms push"`
     config     *LoginSession
     mfaFactor  *oktaAuthFactor
     factorInfo *factorInfo
@@ -123,24 +123,19 @@ func (p *OktaIdentityProvider) providerProfile() IdpProfile {
     return &OktaProfileSettings{}
 }
 
-func (p *OktaIdentityProvider) DefaultFlags(flags *pflag.FlagSet) {
+func (p *OktaIdentityProvider) ConfigurationFlags(flags *pflag.FlagSet) {
     flags.String(flagSetOktaAppURL, "", flagDescSetOktaAppURL)
     flags.String(flagSetOktaAuthMethod, "", flagDescSetOktaAuthMethod)
 }
 
-func (p *OktaIdentityProvider) LoginFlags(flags *pflag.FlagSet) {
+func (p *OktaIdentityProvider) OverrideFlags(flags *pflag.FlagSet) {
     flags.String(flagOktaAppURL, "", flagDescOktaAppURL)
     flags.String(flagOktaAuthMethod, "", flagDescOktaAuthMethod)
 }
 
-func (p *OktaIdentityProvider) ProfileFlags(flags *pflag.FlagSet) {
-    flags.String(flagSetOktaAppURL, "", flagDescSetOktaAppURL)
-    flags.String(flagSetOktaAuthMethod, "", flagDescSetOktaAuthMethod)
-}
-
 type OktaProfileSettings struct {
     appUrl     *string `validate:"omitempty,url"`
-    authMethod *string `validate:"omitempty,oneof=token sms push"`
+    authMethod *string `validate:"omitempty,oneof=totp sms push"`
 }
 
 type oktaAuthRequest struct {

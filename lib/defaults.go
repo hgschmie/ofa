@@ -69,6 +69,9 @@ func StoreDefaultSettings(globalSettings *DefaultSettings) error {
     if err := setString(tree, profileKeyUser, globalSettings.Profile.User); err != nil {
         return err
     }
+    if err := setString(tree, profileKeyURL, globalSettings.Profile.URL); err != nil {
+        return err
+    }
 
     for _, v := range globalSettings.Profile.identityProviders {
         if err := v.Store(tree, ""); err != nil {

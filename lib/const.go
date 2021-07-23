@@ -59,7 +59,7 @@ const (
 
     // profile config keys
 
-    profileKeyProfileType = "profile_type"
+    profileKeyProfileType = "idp_type" // not profile_type because of conflict with profile settings
     profileKeyUser        = "user"
     profileKeyURL         = "url"
 

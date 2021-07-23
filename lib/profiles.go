@@ -35,13 +35,14 @@ func createProfileSettings(profileName *string, profileType *string) (*ProfileSe
 func (p *ProfileSettings) updateProfileType(profileType *string) error {
     p.ProfileType = profileType
     p.identityProviders = make(map[string]IdpProfile)
-    if p.ProfileType == nil {
+
+    if profileType == nil || p.ProfileName == nil {
         for name, v := range idpProfiles {
             p.identityProviders[name] = v.Create()
         }
     } else {
-        if provider, ok := idpProfiles[*p.ProfileType]; ok {
-            p.identityProviders[*p.ProfileType] = provider.Create()
+        if provider, ok := idpProfiles[*profileType]; ok {
+            p.identityProviders[*profileType] = provider.Create()
         } else {
             return fmt.Errorf("Profile type '%v' for profile '%v' is unknown!", p.ProfileType, p.ProfileName)
         }
@@ -63,7 +64,7 @@ func (p *ProfileSettings) Display(profileName *string) {
     if profileName != nil {
         // actual profile
         Information("")
-        Information("**** Profile [%s - %s] settings:", *profileName, *p.ProfileType)
+        Information("**** Profile [%s - %s] settings:", *profileName, p.ProfileType)
     } else {
         // global settings
         logStringSetting(profilePrompt(profileName, labelProfile), p.ProfileName)
@@ -94,7 +95,8 @@ func ListProfiles() (*DefaultSettings, map[string]ProfileSettings) {
         d.Verbose = getBool(store, globalKeyVerbose)
         d.Interactive = getBool(store, globalKeyInteractive)
         // load the profile defaults
-        d.Profile = *loadProfile(store, getString(store, globalKeyProfile))
+        d.Profile = *loadProfile(store, nil)
+        d.Profile.ProfileName = getString(store, globalKeyProfile)
 
         for k := range store.AllSettings() {
             if profile, ok := stripProfileKey(k); ok {
@@ -119,9 +121,14 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
         flagConfigProvider(FlagSetProfileType),
         interactiveMenu(profilePrompt(rootProfileName, labelProfileType), availableIdp, defaultSettings.ProfileType))
 
-    // root profile can have defaults for all profiles, anything else has only a single profile
-    if err := profileSettings.updateProfileType(profileType); err != nil {
-        return nil, err
+    if rootProfileName == nil {
+        profileSettings.ProfileType = profileType
+    } else {
+        // collapse profile settings to the provider type, for the root
+        // all providers are prompted
+        if err := profileSettings.updateProfileType(profileType); err != nil {
+            return nil, err
+        }
     }
 
     profileSettings.User = evaluateString(labelUser,

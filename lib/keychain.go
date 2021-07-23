@@ -96,7 +96,7 @@ func (p *KeychainPassword) Update() error {
     item := keychain.NewGenericPassword(
         serviceUrl,
         p.User,
-        fmt.Sprintf("Okta password for %s @ %s", p.User, serviceUrl),
+        fmt.Sprintf("ofa-managed password for %s @ %s", p.User, serviceUrl),
         []byte(*p.Password),
         accessGroup)
     item.SetSynchronizable(keychain.SynchronizableNo)

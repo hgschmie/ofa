@@ -38,17 +38,17 @@ const (
     flagOneloginAppId        = "onelogin-app-id"
     flagOneloginApiUrl       = "onelogin-api-url"
 
-    flagDescSetOneloginAuthMethod   = "Sets the Onelogin Auth method."
-    flagDescSetOneloginClientId     = "Sets the Onelogin Client Id."
-    flagDescSetOneloginClientSecret = "Sets the Onelogin Client Secret."
-    flagDescSetOneloginAppId        = "Sets the Onelogin Application Id."
-    flagDescSetOneloginApiUrl       = "Sets the Onelogin API Url."
+    flagDescSetOneloginAuthMethod   = "Sets the OneLogin Auth method."
+    flagDescSetOneloginClientId     = "Sets the OneLogin Client Id."
+    flagDescSetOneloginClientSecret = "Sets the OneLogin Client Secret."
+    flagDescSetOneloginAppId        = "Sets the OneLogin Application Id."
+    flagDescSetOneloginApiUrl       = "Sets the OneLogin API Url."
 
-    flagDescOneloginAuthMethod   = "Onelogin Auth method to use."
-    flagDescOneloginClientId     = "Onelogin Client Id to use."
-    flagDescOneloginClientSecret = "Onelogin Client Secret to use."
-    flagDescOneloginAppId        = "Onelogin Application Id to use."
-    flagDescOneloginApiUrl       = "Onelogin API Url to use."
+    flagDescOneloginAuthMethod   = "OneLogin Auth method to use."
+    flagDescOneloginClientId     = "OneLogin Client Id to use."
+    flagDescOneloginClientSecret = "OneLogin Client Secret to use."
+    flagDescOneloginAppId        = "OneLogin Application Id to use."
+    flagDescOneloginApiUrl       = "OneLogin API Url to use."
 
     // profile config keys
 
@@ -60,11 +60,11 @@ const (
 
     // profile labels
 
-    labelOneloginAuthMethod   = "Onelogin auth method"
-    labelOneloginClientId     = "Onelogin Application Client Id"
-    labelOneloginClientSecret = "Onelogin Application Client Secret"
-    labelOneloginAppId        = "Onelogin Application Id"
-    labelOneloginApiUrl       = "Onelogin API Url"
+    labelOneloginAuthMethod   = "OneLogin auth method"
+    labelOneloginClientId     = "OneLogin Application Client Id"
+    labelOneloginClientSecret = "OneLogin Application Client Secret"
+    labelOneloginAppId        = "OneLogin Application Id"
+    labelOneloginApiUrl       = "OneLogin API Url"
 )
 
 type oneloginDeviceInfo struct {
@@ -189,14 +189,14 @@ type OneloginIdentityProvider struct {
 }
 
 func (p *OneloginIdentityProvider) name() string {
-    return "Onelogin"
+    return "OneLogin"
 }
 
 func (p *OneloginIdentityProvider) providerProfile() IdpProfile {
     return &OneloginProfileSettings{}
 }
 
-func (p *OneloginIdentityProvider) DefaultFlags(flags *pflag.FlagSet) {
+func (p *OneloginIdentityProvider) ConfigurationFlags(flags *pflag.FlagSet) {
     flags.String(flagSetOneloginAuthMethod, "", flagDescSetOneloginAuthMethod)
     flags.String(flagSetOneloginClientId, "", flagDescSetOneloginClientId)
     flags.String(flagSetOneloginClientSecret, "", flagDescSetOneloginClientSecret)
@@ -204,20 +204,12 @@ func (p *OneloginIdentityProvider) DefaultFlags(flags *pflag.FlagSet) {
     flags.String(flagSetOneloginApiUrl, "", flagDescSetOneloginApiUrl)
 }
 
-func (p *OneloginIdentityProvider) LoginFlags(flags *pflag.FlagSet) {
+func (p *OneloginIdentityProvider) OverrideFlags(flags *pflag.FlagSet) {
     flags.String(flagOneloginAuthMethod, "", flagDescOneloginAuthMethod)
     flags.String(flagOneloginClientId, "", flagDescOneloginClientId)
     flags.String(flagOneloginClientSecret, "", flagDescOneloginClientSecret)
     flags.String(flagOneloginAppId, "", flagDescOneloginAppId)
     flags.String(flagOneloginApiUrl, "", flagDescOneloginApiUrl)
-}
-
-func (p *OneloginIdentityProvider) ProfileFlags(flags *pflag.FlagSet) {
-    flags.String(flagSetOneloginAuthMethod, "", flagDescSetOneloginAuthMethod)
-    flags.String(flagSetOneloginClientId, "", flagDescSetOneloginClientId)
-    flags.String(flagSetOneloginClientSecret, "", flagDescSetOneloginClientSecret)
-    flags.String(flagSetOneloginAppId, "", flagDescSetOneloginAppId)
-    flags.String(flagSetOneloginApiUrl, "", flagDescSetOneloginApiUrl)
 }
 
 func (p *OneloginIdentityProvider) Configure(config *LoginSession) error {
@@ -531,7 +523,7 @@ func (p *OneloginIdentityProvider) oneloginStateMfaChallenge(verify bool) error 
 
     // rate limit for verification calls
     if verify {
-        time.Sleep(10 * time.Second) // poll once every five seconds...
+        time.Sleep(6 * time.Second) // poll once every six seconds...
     }
 
     p.state = p.mfaDeviceInfo.VerifyState

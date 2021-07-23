@@ -24,7 +24,7 @@ func init() {
     loginCmd.Flags().String(ofa.FlagPassword, "", ofa.FlagDescPassword)
 
     for _, v := range ofa.IdentityProviders {
-        v.DefaultFlags(loginCmd.Flags())
+        v.OverrideFlags(loginCmd.Flags())
     }
 
     loginCmd.Flags().String(ofa.FlagRole, "", ofa.FlagDescRole)
@@ -86,9 +86,9 @@ var (
                 if err != nil {
                     log.Fatalf("Could not access credentials: %v", err)
                 }
-                fmt.Printf("export AWS_ACCESS_KEY_ID=%s\n", v.AccessKeyID)
-                fmt.Printf("export AWS_SECRET_ACCESS_KEY=%s\n", v.SecretAccessKey)
-                fmt.Printf("export AWS_SESSION_TOKEN=%s\n", v.SessionToken)
+                fmt.Printf("AWS_ACCESS_KEY_ID=%s\n", v.AccessKeyID)
+                fmt.Printf("AWS_SECRET_ACCESS_KEY=%s\n", v.SecretAccessKey)
+                fmt.Printf("AWS_SESSION_TOKEN=%s\n", v.SessionToken)
             }
 
             ofa.Information("**** Login complete")

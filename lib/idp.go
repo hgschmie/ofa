@@ -37,4 +37,5 @@ func init() {
         idpProfiles[name] = v.providerProfile()
         availableIdp[v.name()] = toSP(name)
     }
+    availableIdp["<unset>"] = nil
 }
