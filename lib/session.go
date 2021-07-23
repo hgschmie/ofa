@@ -39,7 +39,6 @@ type identityProvider interface {
     Configure(config *LoginSession) error
     Validate() error
     Login() (*string, error)
-    InitiateSession(sessionToken string) (*string, error)
     name() string
     providerProfile() IdpProfile
 

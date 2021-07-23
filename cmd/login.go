@@ -57,14 +57,9 @@ var (
                 log.Fatalf("Could not validate config: #{err}")
             }
 
-            sessionToken, err := loginProvider.Login()
+            samlResponse, err := loginProvider.Login()
             if err != nil {
                 log.Fatalf("Could not log into %s: %v", config.ProfileType, err)
-            }
-
-            samlResponse, err := loginProvider.InitiateSession(*sessionToken)
-            if err != nil {
-                log.Fatalf("Could not initiate SAML session using '%s': %v", config.ProfileType, err)
             }
 
             arnRole, err := ofa.SelectAwsRoleFromSaml(config, samlResponse)

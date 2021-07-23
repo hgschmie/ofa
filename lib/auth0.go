@@ -140,14 +140,15 @@ type Auth0IdentityProvider struct {
     ClientId     *string `validate:"required"`
     ClientSecret *string `validate:"required"`
 
-    config       *LoginSession
-    state        string
-    mfaToken     *string
-    mfaFactor    *auth0MfaResponse
-    factorInfo   *auth0FactorInfo
-    mfaChallenge *auth0ChallengeResponse
-    authToken    *string
-    response     *string
+    config         *LoginSession
+    state          string
+    mfaToken       *string
+    mfaFactor      *auth0MfaResponse
+    factorInfo     *auth0FactorInfo
+    mfaChallenge   *auth0ChallengeResponse
+    authToken      *string
+    samlData       *string
+    factorResponse *string
 }
 
 func (p *Auth0IdentityProvider) name() string {
@@ -281,7 +282,9 @@ func (p *Auth0IdentityProvider) Login() (*string, error) {
         case StateLogin:
             err = p.auth0StateLogin()
         case StateSuccess:
-            return p.authToken, nil
+            return p.samlData, nil
+        case StateSamlAssert:
+            err = p.auth0SamlInitiate()
         case StateMfaRequired:
             err = p.auth0StateMFAInitiate()
         case StateMfaPrompt:
@@ -296,31 +299,34 @@ func (p *Auth0IdentityProvider) Login() (*string, error) {
     }
 }
 
-func (p *Auth0IdentityProvider) InitiateSession(sessionToken string) (samlResponse *string, err error) {
+func (p *Auth0IdentityProvider) auth0SamlInitiate() error {
     Information("**** Fetching Auth0 SAML response")
 
     // this code does nto work. It is a placeholder until I figure out
     // how to do this with auth0 (see https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354)
 
-    var samlUrl string = "/samlp/" + *p.ClientId + "?connection=Username-Password-Authentication"
+    var samlUrl = "/samlp/" + *p.ClientId + "?connection=Username-Password-Authentication"
     userinfoURL, err := p.config.URL.Parse(samlUrl)
     if err != nil {
-        return nil, err
+        return err
     }
 
-    response, err := auth0Get(userinfoURL.String(), &sessionToken)
+    response, err := auth0Get(userinfoURL.String(), p.authToken)
     if err != nil {
-        return nil, err
+        return err
     }
 
     r := make(map[string]interface{}, 0)
     err = json.Unmarshal(response, &r)
     if err != nil {
-        return nil, err
+        return err
     }
     log.Panicf("Result: %v", r)
 
-    return nil, nil
+    p.state = StateSuccess
+    p.samlData = nil
+
+    return nil
 }
 
 func (p *Auth0IdentityProvider) auth0StateLogin() error {
@@ -371,7 +377,7 @@ func (p *Auth0IdentityProvider) auth0StateLogin() error {
 
     // got a token in the first shot. Declare success
     p.authToken = auth0Response.AccessToken
-    p.state = StateSuccess
+    p.state = StateSamlAssert
     return nil
 }
 
@@ -493,7 +499,7 @@ func (p *Auth0IdentityProvider) auth0StateMFAPrompt() error {
         return err
     }
 
-    p.response = &result
+    p.factorResponse = &result
     p.state = StateMfaVerify
     return nil
 }
@@ -555,11 +561,11 @@ func (p *Auth0IdentityProvider) auth0StateMFAVerify() error {
     switch p.mfaFactor.Type {
     case "oob":
         req.OOBCode = &p.mfaChallenge.OOBCode
-        req.BindingCode = p.response
+        req.BindingCode = p.factorResponse
     case "otp":
-        req.Otp = p.response
+        req.Otp = p.factorResponse
     case "recovery-code":
-        req.RecoveryCode = p.response
+        req.RecoveryCode = p.factorResponse
     }
 
     reqBody, err := json.Marshal(req)
@@ -603,7 +609,7 @@ func (p *Auth0IdentityProvider) auth0StateMFAVerify() error {
         }
 
         p.authToken = response.AccessToken
-        p.state = StateSuccess
+        p.state = StateSamlAssert
         return nil
     }
 }

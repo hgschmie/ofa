@@ -309,19 +309,19 @@ func (p *OktaIdentityProvider) Login() (*string, error) {
             authTransaction, err = p.mfaChallenge(authTransaction)
         case "SUCCESS":
             Information("**** Okta login successful")
-            return &authTransaction.SessionToken, nil
+            return p.oktaInitiateSamlSession(authTransaction)
         default:
             return nil, fmt.Errorf("Okta Session status: %s", authTransaction.SessionToken)
         }
     }
 }
 
-func (p *OktaIdentityProvider) InitiateSession(sessionToken string) (samlResponse *string, err error) {
+func (p *OktaIdentityProvider) oktaInitiateSamlSession(authTransaction *oktaAuthTransaction) (samlResponse *string, err error) {
     Information("**** Fetching Okta SAML response")
 
     u := p.AppURL
     q := u.Query()
-    q.Set("sessionToken", sessionToken)
+    q.Set("sessionToken", authTransaction.SessionToken)
     p.AppURL.RawQuery = q.Encode()
 
     response, err := oktaGet(u.String())

@@ -555,10 +555,6 @@ func (p *OneloginIdentityProvider) oneloginStateMfaPrompt() error {
     return nil
 }
 
-func (p *OneloginIdentityProvider) InitiateSession(sessionToken string) (samlResponse *string, err error) {
-    return &sessionToken, nil
-}
-
 type oneloginErrorStatus struct {
     errorCode    int    `json:"code,omitempty"`
     errorType    string `json:"type,omitempty"`
