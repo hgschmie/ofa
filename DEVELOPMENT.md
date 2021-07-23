@@ -26,7 +26,7 @@ $ go install
 
 Use the tool! If you are using AWS with Okta or OneLogin, it should work out of the box.
 
-Any bug reports, feedback, pull requests are welcome, please use [the github issue tracker](https://github.com/hgschmie/ofa) to report them.
+Any bug reports, feedback, pull requests are welcome, please use [the github issue tracker](https://github.com/hgschmie/ofa/issues) to report them.
 
 At this point, the tool is good enough for me to use so I will only add new features if users ask for them or if I need them myself.
 
