@@ -22,11 +22,28 @@ $ cd ofa
 $ go install
 ```
 
+### How it works
+
+`ofa` uses user login and password information (stored in keychain) to create an access token using an IdP.
+
+It then exchanges this token for a SAML 2.0 assertion which contains the necessary information for AWS (roles, session time).
+
+The code actually parses the SAML 2.0 assertion (it is a base64-encoded XML document) to allow role selection.
+
+It then uses the AWS STS `AssumeRoleWithSAMLRequest` API call to authenticate and create static credentials which are written into the shared credential file.
+
+#### Why SAML (and not xxx?)
+
+Mostly because the tool that `ofa` replaces also uses SAML and IdP/SAML integration was uses to authenticate users in the environments where I worked before.
+
+There is no fundamental reason why this tool could not expanded to support e.g. OpenID besides "no one has asked for it and I don't need it right now".
+
+
 ### How to help as a developer / user:
 
 Use the tool! If you are using AWS with Okta or OneLogin, it should work out of the box.
 
-Any bug reports, feedback, pull requests are welcome, please use [the github issue tracker](https://github.com/hgschmie/ofa/issues) to report them.
+Bug reports, feedback, pull requests are welcome, please use [the github issue tracker](https://github.com/hgschmie/ofa/issues) to report them.
 
 At this point, the tool is good enough for me to use so I will only add new features if users ask for them or if I need them myself.
 

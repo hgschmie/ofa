@@ -16,8 +16,7 @@ be functional but not all features may be supported).
 
 ### Okta
 
-The Okta code is brittle as it requires to use a semi-documented (https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint)
-way to create the necessary SAML Assertion.
+The Okta code is brittle as it uses a ([a semi-documented way that needs to parse a HTML page] (https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint))to access the necessary SAML Assertion.
 
 ### OneLogin
 
@@ -25,11 +24,12 @@ Only documented APIs are used. Does not support all available authentication met
 
 Supports the Multi-Account application (will prompt for all roles from all accounts).
 
-There are some minor issues when Push notifications get denied on the mobile app, see https://stackoverflow.com/questions/68478392/onelogin-saml-assertion-verify-factor-with-authentication-denied for details.
+There are some minor issues when Push notifications get denied on the mobile app, see [SAML verify factor API call with authentication denied](https://stackoverflow.com/questions/68478392/onelogin-saml-assertion-verify-factor-with-authentication-denied) for details.
 
 ### Auth0
 
-**Auth0 does not work**. It seems to be impossible to create a SAML Assertion from a token (see https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354). 
+**Auth0 does not work**. I could not figure out how to (see https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354)).
+
 
 
 ## Using Okta
