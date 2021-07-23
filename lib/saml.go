@@ -48,6 +48,10 @@ func (role samlAwsRole) String() string {
     return strings.TrimPrefix(role.RoleArn.Resource, "role/")
 }
 
+func (role samlAwsRole) AccountId() string {
+    return role.RoleArn.AccountID
+}
+
 func newSamlAwsRole(s string, sessionDuration int64) (*samlAwsRole, error) {
     roleText := strings.Split(s, ",")
     if len(roleText) < 2 {
@@ -98,29 +102,41 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, e
 
     sessionDuration := int64(sessionPath.Evaluate(xmlquery.CreateXPathNavigator(xmlDoc)).(float64))
 
-    var arnRoles []samlAwsRole
+    var allRoles []samlAwsRole
+
+    // are roles from more than one account present?
+    multiAccount := false
+    var accountIdSeen *string = nil
 
     for roles.MoveNext() {
         nodeText := roles.Current().Value()
-        roleAssertion, err := newSamlAwsRole(nodeText, sessionDuration)
+        samlRole, err := newSamlAwsRole(nodeText, sessionDuration)
         if err != nil {
             return nil, err
         }
 
-        if session.AwsRole == nil || strings.ToLower(*session.AwsRole) == strings.ToLower(roleAssertion.String()) {
-            arnRoles = append(arnRoles, *roleAssertion)
+        if session.AwsRole == nil || strings.ToLower(*session.AwsRole) == strings.ToLower(samlRole.String()) {
+            if accountIdSeen == nil {
+                accountIdSeen = toSP(samlRole.AccountId())
+            } else {
+                // seen roles from more than one account -> This is a multi-account role list
+                if *accountIdSeen != samlRole.AccountId() {
+                    multiAccount = true
+                }
+            }
+            allRoles = append(allRoles, *samlRole)
         }
     }
 
     var arnRole *samlAwsRole
 
-    switch len(arnRoles) {
+    switch len(allRoles) {
     case 0:
         log.Fatal("No usable roles associated with this account, can not log into AWS!")
     case 1:
-        arnRole = &arnRoles[0]
+        arnRole = &allRoles[0]
     default:
-        result, err := awsRoleMenuSelector("Select AWS Role", arnRoles)
+        result, err := awsRoleMenuSelector("Select AWS Role", allRoles, multiAccount)
         if err != nil {
             return nil, err
         }
