@@ -394,8 +394,6 @@ func (p *OneloginIdentityProvider) sendSamlAssertion() error {
         return err
     }
 
-    log.Printf("SAML Response: %v", samlResponse)
-
     if samlResponse.Data != nil {
         // success
         p.samlData = samlResponse.Data

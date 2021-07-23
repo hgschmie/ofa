@@ -19,7 +19,6 @@ func init() {
     defaultSetCmd.Flags().String(ofa.FlagSetUser, "", ofa.FlagDescSetUser)
     defaultSetCmd.Flags().String(ofa.FlagSetURL, "", ofa.FlagDescSetURL)
 
-
     for _, v := range ofa.IdentityProviders {
         v.DefaultFlags(defaultSetCmd.Flags())
     }

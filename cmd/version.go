@@ -9,9 +9,9 @@ import (
 
 var (
     BuildVersion = "dev"
-    BuildCommit = "none"
-    BuildDate = "unknown"
-    BuiltBy   = "unknown"
+    BuildCommit  = "none"
+    BuildDate    = "unknown"
+    BuiltBy      = "unknown"
 )
 
 func init() {

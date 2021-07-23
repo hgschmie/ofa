@@ -58,7 +58,7 @@ var (
         "<unset>":                            nil,
     }
 
-    auth0Jar         *cookiejar.Jar
+    auth0Jar    *cookiejar.Jar
     auth0Client *http.Client
 
     auth0Types = map[string]*auth0FactorInfo{
