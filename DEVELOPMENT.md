@@ -39,7 +39,7 @@ Feel free to reach out to me to get your service supported by `ofa`.
 - If you work for Okta:
   - I am lacking a working account that can install applications (the developer accounts don't and the trial accounts expire and I don't want to play catchup
   all the time).
-  - No one could tell me whether [https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint](parsing a HTML page)  is really the only way to get at the SAML Assertion with an access token. I found similar code in other tools but it seems less than ideal.
+  - No one could tell me whether [parsing a HTML page] (https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint) is really the only way to get at the SAML Assertion with an access token. I found similar code in other tools but it seems less than ideal.
 - If you work for Auth0:
   - https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354 is a hard blocker. I abandoned work on the auth0 code because of it and the lack of community response
 
