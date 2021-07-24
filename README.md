@@ -16,7 +16,7 @@ be functional but not all features may be supported).
 
 ### Okta
 
-The Okta code is brittle as it uses a ([a semi-documented way that needs to parse a HTML page] (https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint))to access the necessary SAML Assertion.
+The Okta code is brittle as it uses a ([a semi-documented way that needs to parse a HTML page](https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint))to access the necessary SAML Assertion.
 
 ### OneLogin
 
