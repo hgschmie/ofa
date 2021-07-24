@@ -24,11 +24,11 @@ Only documented APIs are used. Does not support all available authentication met
 
 Supports the Multi-Account application (will prompt for all roles from all accounts).
 
-There are some minor issues when Push notifications get denied on the mobile app, see [SAML verify factor API call with authentication denied](https://stackoverflow.com/questions/68478392/onelogin-saml-assertion-verify-factor-with-authentication-denied) for details.
+There are some minor issues when Push notifications get denied on the mobile app, see [SAML verify factor API call with authentication denied](https://stackoverflow.com/questions/68478392/onelogin-saml-assertion-verify-factor-with-authentication-denied).
 
 ### Auth0
 
-**Auth0 does not work**. I could not figure out how to (see https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354)).
+**Auth0 does not work**. I could not figure out how to get this to work (https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354).
 
 
 
@@ -37,7 +37,7 @@ There are some minor issues when Push notifications get denied on the mobile app
 ### Prerequisite: Setting up Okta and AWS
 
 The `ofa` tool assumes that your Okta/AWS setup is using the "AWS Account Federation"
-Okta application (see https://www.okta.com/integrations/aws-account-federation/ for details.
+Okta application (https://www.okta.com/integrations/aws-account-federation/).
 
 This requires a regular Okta account or at least an Okta trial account; developer accounts do not allow installation of applications.
 
