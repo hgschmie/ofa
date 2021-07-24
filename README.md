@@ -66,7 +66,7 @@ When using MFA, the user account must be already enrolled using the MFA. `ofa` d
 ### Prerequisite: Setting up OneLogin and AWS
 
 The `ofa` tool assumes that your OneLogin/AWS setup is using the "Amazon Web Services", "Amazon Web Services (AWS) Multi Account" or "Amazon Web Services (AWS) Multi Role"
-application. There is a great walkthrough at https://onelogin.service-now.com/kb_view.do?sysparm_article=KB0010344 which describes the setup in detail.
+application. There is a [great walkthrough](https://onelogin.service-now.com/kb_view.do?sysparm_article=KB0010344) which describes the setup in detail.
 
 Make sure that you can log into your AWS Account or Accounts using the OneLogin Application portal.
 
