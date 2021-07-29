@@ -568,8 +568,11 @@ func oneloginAuthError(response *http.Response, responseBody []byte) error {
     }
 
     if statusResponse, ok := errorResponse["status"]; ok {
-        var errorStatus *oneloginErrorStatus
-        if err := json.Unmarshal([]byte(statusResponse.(string)), errorStatus); err == nil {
+        var errorStatus oneloginErrorStatus
+        if status, ok := statusResponse.(map[string]interface{}); ok {
+            errorStatus.errorType = status["type"].(string)
+            errorStatus.errorCode = int(status["code"].(float64))
+            errorStatus.errorMessage = status["message"].(string)
             return errorStatus
         }
     }
