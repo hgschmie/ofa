@@ -97,12 +97,8 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
         return nil, err
     }
 
-    keychainConfigProvider := newKeychainEntry(session.URL)
-
-    session.Password = evaluateMask(labelPassword,
-        session.flagConfig(FlagPassword),     // --password flag
-        keychainConfigProvider(session.User), // keychain stored password
-        interactivePasswordValue(labelPassword)) // interactive prompt
+    // moved to conditionally compiled piece of code
+	promptSessionPassword(session)
 
     var ok bool
 

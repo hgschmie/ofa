@@ -2,11 +2,12 @@
 
 Command line access to IdP Authentication and AWS IAM role assignment without a browser.
 
-See the [Changes](CHANGES.md) file for a list of changes and [Development](DEVELOPMENT.md) for information on how to build and contribute to this project.
+See the [Changes](CHANGES.md) file for a list of changes and [Development](DEVELOPMENT.md) for information on how to
+build and contribute to this project.
 
-This software is provided *as is* under MIT license. It may contain bugs and does not work in all possible corner cases. I have access to developer
-accounts on OneLogin and Auth0. There is no usable, permanent free tier on Okta, so the Okta support has fallen behind (it should
-be functional but not all features may be supported).
+This software is provided *as is* under MIT license. It may contain bugs and does not work in all possible corner cases.
+I have access to developer accounts on OneLogin and Auth0. There is no usable, permanent free tier on Okta, so the Okta
+support has fallen behind (it should be functional but not all features may be supported).
 
 ## State of IdPs
 
@@ -16,7 +17,9 @@ be functional but not all features may be supported).
 
 ### Okta
 
-The Okta code is brittle as it uses a [a semi-documented way that needs to parse a HTML page](https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint) to access the necessary SAML Assertion.
+The Okta code is brittle as it uses
+a [a semi-documented way that needs to parse a HTML page](https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint)
+to access the necessary SAML Assertion.
 
 ### OneLogin
 
@@ -24,13 +27,14 @@ Only documented APIs are used. Does not support all available authentication met
 
 Supports the Multi-Account application (will prompt for all roles from all accounts).
 
-There are some minor issues when Push notifications get denied on the mobile app, see [SAML verify factor API call with authentication denied](https://stackoverflow.com/questions/68478392/onelogin-saml-assertion-verify-factor-with-authentication-denied).
+There are some minor issues when Push notifications get denied on the mobile app,
+see [SAML verify factor API call with authentication denied](https://stackoverflow.com/questions/68478392/onelogin-saml-assertion-verify-factor-with-authentication-denied)
+.
 
 ### Auth0
 
-**Auth0 does not work**. I could not figure out how to get this to work (https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354).
-
-
+**Auth0 does not work**. I could not figure out how to get this to
+work (https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354).
 
 ## Using Okta
 
@@ -39,7 +43,8 @@ There are some minor issues when Push notifications get denied on the mobile app
 The `ofa` tool assumes that your Okta/AWS setup is using the "AWS Account Federation"
 Okta application (https://www.okta.com/integrations/aws-account-federation/).
 
-This requires a regular Okta account or at least an Okta trial account; developer accounts do not allow installation of applications.
+This requires a regular Okta account or at least an Okta trial account; developer accounts do not allow installation of
+applications.
 
 ### Okta configuration reference
 
@@ -50,7 +55,9 @@ This requires a regular Okta account or at least an Okta trial account; develope
 | `okta_auth_method` | `--set-okta-auth-method` <br> `--auth-method` | Supported methods are  `push`, `sms` and `totp`. |
 
 * Use the `Okta organization URL`, usually `https://<company name>.okta.com/` as the Base/Organization URL.
-* Locate the application URL by logging into the Okta organization, then hover over the AWS application icon in the web view and selecting "Copy Link Address" in the browser. Stripping the query section (`?fromHome=true`) from this URL gives the Okta application URL.
+* Locate the application URL by logging into the Okta organization, then hover over the AWS application icon in the web
+  view and selecting "Copy Link Address" in the browser. Stripping the query section (`?fromHome=true`) from this URL
+  gives the Okta application URL.
 
 #### Supported Authentication methods
 
@@ -60,20 +67,21 @@ When using MFA, the user account must be already enrolled using the MFA. `ofa` d
 * `sms` - Sending a text message, then prompting for the code from the text message.
 * `totp` - Using an Authentication application (Google Authenticator, Authy etc.), prompts for the TOTP code.
 
-
 ## Using OneLogin
 
 ### Prerequisite: Setting up OneLogin and AWS
 
-The `ofa` tool assumes that your OneLogin/AWS setup is using the "Amazon Web Services", "Amazon Web Services (AWS) Multi Account" or "Amazon Web Services (AWS) Multi Role"
-application. There is a [great walkthrough](https://onelogin.service-now.com/kb_view.do?sysparm_article=KB0010344) which describes the setup in detail.
+The `ofa` tool assumes that your OneLogin/AWS setup is using the "Amazon Web Services", "Amazon Web Services (AWS) Multi
+Account" or "Amazon Web Services (AWS) Multi Role"
+application. There is a [great walkthrough](https://onelogin.service-now.com/kb_view.do?sysparm_article=KB0010344) which
+describes the setup in detail.
 
 Make sure that you can log into your AWS Account or Accounts using the OneLogin Application portal.
 
-This setup works with the OneLogin free / developer tier ("Developer Basic") available at https://www.onelogin.com/developer-signup
+This setup works with the OneLogin free / developer tier ("Developer Basic") available
+at https://www.onelogin.com/developer-signup
 
 Unlike the Okta Trial Accounts, these do not expire (see the /subscription/edit tab in the developer account).
-
 
 ### Prerequisite: Setup API Access
 
@@ -82,9 +90,10 @@ Unlike the Okta Trial Accounts, these do not expire (see the /subscription/edit 
 
 Copy the "Client ID" and "Client Secret" values.
 
-This credential needs to be shared between all users of the ofa application within an application. It allows users to authenticate with the API so it should be kept confidential. However, it does require a second (login and password) and potentially a third factor (MFA) to actually acccess any service.
-It is most useful to track all users that use the `ofa` client tool to authenticate.
-
+This credential needs to be shared between all users of the ofa application within an application. It allows users to
+authenticate with the API so it should be kept confidential. However, it does require a second (login and password) and
+potentially a third factor (MFA) to actually acccess any service. It is most useful to track all users that use
+the `ofa` client tool to authenticate.
 
 ### OneLogin configuration reference
 
@@ -97,8 +106,10 @@ It is most useful to track all users that use the `ofa` client tool to authentic
 | `onelogin_app_id` | `--set-onelogin-app-id` <br> `--onelogin-app-id` | OneLogin application id |
 | `onelogin_api_url` | `--set-onelogin-api-url` <br> `--onelogin-api-url` | OneLogin API endpoint |
 
-* The tool assumes that it can determine the actual subdomain by taking the first part of the host name of the Base/Organization URL.
-* Administrators can locate the application id by opening the application settings page in the Administration portal. The app-id is in the URL: `/apps/<app-id>/edit`.
+* The tool assumes that it can determine the actual subdomain by taking the first part of the host name of the
+  Base/Organization URL.
+* Administrators can locate the application id by opening the application settings page in the Administration portal.
+  The app-id is in the URL: `/apps/<app-id>/edit`.
 * OneLogin has multiple API endpoints around the world. If unset, it defaults to `https://api.us.onelogin.com/`.
 
 #### Supported Authentication methods
@@ -110,18 +121,21 @@ When using MFA, the user account must be already enrolled using the MFA. `ofa` d
 * `email` - Sending an email, then prompting for the code from the mail.
 * `totp` - Using an Authentication application (Google Authenticator, Authy etc.), prompts for the TOTP code.
 
-
 #### OneLogin Multi Account setup
 
-OneLogin allows using a single OneLogin application to log into multiple AWS accounts. When using the Application from a brower, AWS will present a selection screen where the accounts and all available roles are listed for user selection.
+OneLogin allows using a single OneLogin application to log into multiple AWS accounts. When using the Application from a
+brower, AWS will present a selection screen where the accounts and all available roles are listed for user selection.
 
 `ofa` supports this mode, however there are some caveats:
 
-- When the set of roles contains more than one AWS account and the user needs to choose between multiple roles from multiple accounts, the menu selection will contain the AWS account ids in parentheses.
-- When the same role name is presented in multiple accounts, role selection will always fall back to the interactive dialog as `ofa` only stores the role name and not the account id in its configuration. This may be fixed in a future version.
+- When the set of roles contains more than one AWS account and the user needs to choose between multiple roles from
+  multiple accounts, the menu selection will contain the AWS account ids in parentheses.
+- When the same role name is presented in multiple accounts, role selection will always fall back to the interactive
+  dialog as `ofa` only stores the role name and not the account id in its configuration. This may be fixed in a future
+  version.
 
-If you have full control over the AWS role and account setup, it is recommended to prefix the role names for SAML 2.0 federation roles with some account information (e.g. "dev" or "prod") to make them easier to differentiate.
-
+If you have full control over the AWS role and account setup, it is recommended to prefix the role names for SAML 2.0
+federation roles with some account information (e.g. "dev" or "prod") to make them easier to differentiate.
 
 ## Usage
 
@@ -144,7 +158,6 @@ Each profile contains
 * interactive prompt (if running in interactive mode)
 
 profile selection happens through a default profile setting, or a command line flag.
-
 
 #### commands and flags
 
@@ -172,7 +185,8 @@ Ignore any config file. Parameters and interactive input must provide all parame
 
 * `--interactive`
 
-Force interactive mode (overrides default). `ofa` will prompt for input if required. This is the default unless configured otherwise.
+Force interactive mode (overrides default). `ofa` will prompt for input if required. This is the default unless
+configured otherwise.
 
 * `--batch`
 
@@ -185,7 +199,6 @@ Only output minimal or no information.
 * `--verbose`
 
 Output more information during operation. This is the default unless configured otherwise.
-
 
 #### ofa defaults command
 
@@ -209,10 +222,10 @@ ofa --set-interactive=false --batch
 * AWS role to assume
 * AWS session time
 
-
 ### ofa profile command
 
-`ofa` can manage multiple profiles for logging into AWS using an IdP. Profiles are independent and can refer to multiple IdP and AWS accounts.
+`ofa` can manage multiple profiles for logging into AWS using an IdP. Profiles are independent and can refer to multiple
+IdP and AWS accounts.
 
 Each profile may consist of
 
@@ -225,21 +238,24 @@ Each profile may consist of
 
 All parameters are optional, the tool may fall back to its defaults or prompt in interactive mode.
 
-The `ofa profile list` command lists all available profiles. Verbose mode shows all profile parameters, quiet mode only the names of the profiles.
+The `ofa profile list` command lists all available profiles. Verbose mode shows all profile parameters, quiet mode only
+the names of the profiles.
 
-To create a new profile, the `ofa profile create` command will either use command line parameters or prompt for the profile settings.
+To create a new profile, the `ofa profile create` command will either use command line parameters or prompt for the
+profile settings.
 
 The `ofa profile update` command allows editing of existing profiles.
 
 The `ofa profile delete` command removes an existing profile.
 
-
 #### ofa profiles and AWS profiles
 
-`ofa` maintains a configuration file that controls the login information for a profile. However, `ofa` was designed to work with arbitrary profile names and
-having a profile in ofa itself is not necessary. This is intentional and not a bug.
+`ofa` maintains a configuration file that controls the login information for a profile. However, `ofa` was designed to
+work with arbitrary profile names and having a profile in ofa itself is not necessary. This is intentional and not a
+bug.
 
-As `ofa` can be used fully interactive or all settings could be covered by defaults, the following command actually does nothing:
+As `ofa` can be used fully interactive or all settings could be covered by defaults, the following command actually does
+nothing:
 
 ```bash
 ofa profile create --profile=new_profile --batch`
@@ -251,32 +267,35 @@ because there is no setting associated with the profile. It can still be used fo
 ofa login --profile=some_random_name
 ```
 
-will work well (and use either defaults or interactive inputs) to log into the IdP and then write credentials for "some_random_name" into the AWS credentials file.
+will work well (and use either defaults or interactive inputs) to log into the IdP and then write credentials for "
+some_random_name" into the AWS credentials file.
 
+### ofa password command (macOS only)
 
+On macOS , `ofa` can store passwords in the user specific keychain.
 
-### ofa password command
+IdPs are single signon systems and identified by the Base/Organization URL, so each combination of this URL and a login
+is unique, even if used in multiple profiles.
 
-On supported systems (MacOS has been tested, Linux should work as well), `ofa` can store passwords in the user specific keychain.
+`ofa password set` sets a password in the keychain, `ofa password remove` removes it. The `set` command will override an
+existing password.
 
-IdPs are single signon systems and identified by the Base/Organization URL, so each combination of this URL and a login is unique, even if used in multiple profiles.
-
-`ofa password set` sets a password in the keychain, `ofa password remove` removes it. The `set` command will override an existing password.
-
-
-Note that the keychain might prompt (with a modal dialog) when using a password. It is not recommended to always allow `ofa` access to a keychain entry as this removes a security factor.
-
+Note that the keychain might prompt (with a modal dialog) when using a password. It is not recommended to always
+allow `ofa` access to a keychain entry as this removes a security factor.
 
 ### ofa login command
 
-The `ofa login` command authenticates using the selected IdP and then uses the information to log into AWS, assume a role and create credentials.
+The `ofa login` command authenticates using the selected IdP and then uses the information to log into AWS, assume a
+role and create credentials.
 
-This command uses all available sources (command line parameters, profile settings, default settings and interactive input).
+This command uses all available sources (command line parameters, profile settings, default settings and interactive
+input).
 
-A successful login and role selection creates a new set of AWS credentials. These credentials are written into the AWS credentials file **using the profile name**.
+A successful login and role selection creates a new set of AWS credentials. These credentials are written into the AWS
+credentials file **using the profile name**.
 
-Writing the credentials file can be avoided by using the `--eval` flag. In this case, `ofa` prints output that can be evaluated in the calling shell.
-
+Writing the credentials file can be avoided by using the `--eval` flag. In this case, `ofa` prints output that can be
+evaluated in the calling shell.
 
 ## Examples
 
@@ -288,14 +307,14 @@ Writing the credentials file can be avoided by using the `--eval` flag. In this 
 ofa defaults set --set-user=<user name> --set-okta-auth-method=push --set-url=https://<organization>.okta.com/ --set-session-time=14400 --batch
 ```
 
-Create defaults for using Okta as IdP. When using a single Okta instance, the username, authentication method and Okta URL will always be the same. Setting them as default makes profile generation simpler.
+Create defaults for using Okta as IdP. When using a single Okta instance, the username, authentication method and Okta
+URL will always be the same. Setting them as default makes profile generation simpler.
 
 ```
 ofa password set
 ```
 
 As URL and username exist as defaults, this command only prompts for the password and stores it in the keychain.
-
 
 ```
 ofa profile create --profile=new_profile --set-profile-type=okta --set-role=<aws role to assume> --set-okta-app-url=<... okta aws app url as described above ...> --batch
@@ -309,12 +328,12 @@ ofa defaults set --set-profile=new_profile --batch
 
 Make the new profile the default unless there is a profile name set with a parameter.
 
-
 ```
 ofa login
 ```
 
-will initiate a login using the default IdP (Okta configured as described above), assume the role in the `new_profile` profile and write AWS credentials in the `[new_profile]` section of the AWS credentials file.
+will initiate a login using the default IdP (Okta configured as described above), assume the role in the `new_profile`
+profile and write AWS credentials in the `[new_profile]` section of the AWS credentials file.
 
 ```
 eval $(ofa login --eval)
@@ -322,14 +341,14 @@ eval $(ofa login --eval)
 
 allows setting of environment variables without touching the AWS credentials file.
 
-
 * Set up a second profile:
 
 ```
 ofa profile create --profile=dev --set-profile-type=okta --set-okta-app-url=<... okta aws app url as described above ...> --batch
 ```
 
-Unlike the previous profile, this one does not contain an AWS role. If Okta returns more than one role, `ofa` will prompt:
+Unlike the previous profile, this one does not contain an AWS role. If Okta returns more than one role, `ofa` will
+prompt:
 
 ```
 ofa login --profile dev
@@ -378,7 +397,8 @@ ofa defaults set --batch \
                  --set-onelogin-client-secret=<api access client secret>
 ```
 
-Creates defaults for `ofa`. As this will be using OneLogin, it configures all the OneLogin defaults for a single OneLogin instance where the username, base url and the client parameters will all be the same.
+Creates defaults for `ofa`. As this will be using OneLogin, it configures all the OneLogin defaults for a single
+OneLogin instance where the username, base url and the client parameters will all be the same.
 
 Making them defaults simplifies profile generation. All defaults can be overridden on a per-profile basis.
 
@@ -388,16 +408,13 @@ Notes:
 * An API access credential (see above) must be set.
 * Choose the OneLogin region accordingly (e.g. `us` for US, `eu` for Europe).
 
-
 #### 2. Set the user password
-
 
 ```bash
 ofa password set
 ```
 
 URL and username exist as defaults, this command only prompts for the password and stores it securely in the keychain.
-
 
 #### 3. Create a profile
 
@@ -411,7 +428,6 @@ ofa profile create --batch \
 
 This command creates the `new_profile` profile and assigns a specific role to assume.
 
-
 #### Optional: Make the new profile the default
 
 ```
@@ -420,14 +436,14 @@ ofa defaults set --set-profile=new_profile --batch
 
 Make the new profile the default unless there is a profile name set with a parameter.
 
-
 #### 4. Retrieve AWS credentials using OneLogin IdP
 
 ```
 ofa login --profile=new_profile
 ```
 
-will initiate a login using OneLogin, assume the role in the `new_profile` profile and write AWS credentials in the `[new_profile]` section of the AWS credentials file.
+will initiate a login using OneLogin, assume the role in the `new_profile` profile and write AWS credentials in
+the `[new_profile]` section of the AWS credentials file.
 
 ```
 eval $(ofa login --profile=new_profile --eval)
@@ -435,9 +451,7 @@ eval $(ofa login --profile=new_profile --eval)
 
 allows setting of environment variables without writing them to the AWS credentials file.
 
-
 #### Bonus: Setting multiple profiles
-
 
 ```bash
 ofa profile create --batch \
@@ -445,7 +459,8 @@ ofa profile create --batch \
                    --set-session-time=3600
 ```
 
-Unlike the previous profile, this one does not contain an AWS role. If OneLogin returns more than one role, `ofa` will prompt for role selection:
+Unlike the previous profile, this one does not contain an AWS role. If OneLogin returns more than one role, `ofa` will
+prompt for role selection:
 
 ```
 INFO **** Global Flags:
@@ -476,5 +491,6 @@ INFO **** Selecting AWS role from SAML response
     role_B (aws_account_id 3)
 ```
 
-In this example, there are multiple AWS accounts configured (aws_account_id 1-3) and for some of them, the role names are overlapping (role_A and role_B are present in aws_account_id 1 and aws_account_id 2).
+In this example, there are multiple AWS accounts configured (aws_account_id 1-3) and for some of them, the role names
+are overlapping (role_A and role_B are present in aws_account_id 1 and aws_account_id 2).
 
