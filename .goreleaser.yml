@@ -2,15 +2,29 @@ before:
   hooks:
     - go mod download
 builds:
-  - env:
+  - id: "darwin"
+    env:
       - CGO_ENABLED=1
     goos:
       - darwin
-      - linux
     goarch:
       - amd64
       - arm64
       # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
+    ldflags:
+      - -s -w -X github.com/hgschmie/ofa/cmd.BuildVersion={{.Version}} -X github.com/hgschmie/ofa/cmd.BuildCommit={{.Commit}} -X github.com/hgschmie/ofa/cmd.BuildDate={{.Date}} -X github.com/hgschmie/ofa/cmd.BuiltBy=goreleaser
+  - id: "linux"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
+    goarm:
+      - 7
     ldflags:
       - -s -w -X github.com/hgschmie/ofa/cmd.BuildVersion={{.Version}} -X github.com/hgschmie/ofa/cmd.BuildCommit={{.Commit}} -X github.com/hgschmie/ofa/cmd.BuildDate={{.Date}} -X github.com/hgschmie/ofa/cmd.BuiltBy=goreleaser
 archives:
