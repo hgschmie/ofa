@@ -1,146 +1,146 @@
 package ofa
 
 import (
-    "fmt"
-    "os"
-    "sort"
+	"fmt"
+	"os"
+	"sort"
 
-    "github.com/manifoldco/promptui"
-    log "github.com/sirupsen/logrus"
+	"github.com/manifoldco/promptui"
+	log "github.com/sirupsen/logrus"
 )
 
 func interactiveMenuSelector(label string, entries map[string]*string, defaultValue *string) (*string, error) {
-    items := make([]string, 0, len(entries))
+	items := make([]string, 0, len(entries))
 
-    var defaultSelect *string = nil
+	var defaultSelect *string = nil
 
-    for k, v := range entries {
-        items = append(items, k)
-        if defaultValue != nil && v != nil && *v == *defaultValue {
-            defaultSelect = toSP(k)
-        }
-    }
+	for k, v := range entries {
+		items = append(items, k)
+		if defaultValue != nil && v != nil && *v == *defaultValue {
+			defaultSelect = toSP(k)
+		}
+	}
 
-    result, err := menuSelector(label, items, defaultSelect)
-    if err != nil {
-        return nil, err
-    }
+	result, err := menuSelector(label, items, defaultSelect)
+	if err != nil {
+		return nil, err
+	}
 
-    if result == nil {
-        return nil, nil
-    }
+	if result == nil {
+		return nil, nil
+	}
 
-    return entries[*result], nil
+	return entries[*result], nil
 }
 
 func awsRoleMenuSelector(label string, roles []samlAwsRole, multiAccount bool) (*samlAwsRole, error) {
-    m := make(map[string]*samlAwsRole, len(roles))
-    items := make([]string, len(roles))
-    for i, v := range roles {
-        var menuKey string
-        if multiAccount {
-            // display account id if more than one account present
-            menuKey = fmt.Sprintf("%s (%s)", v.String(), v.AccountId())
-        } else {
-            // there is a wonderful bug hidden here which is due to the legacy of golang to C.
-            // When using "&v" here, this will store not the address of the element in the
-            // roles array but of v itself which will change its value with the next iteration.
-            //
-            // This does not happen in programming languages that have no pointers. golang has, which is unfortunate.
-            menuKey = v.String()
-        }
-        m[menuKey] = &roles[i]
-        items[i] = menuKey
-    }
+	m := make(map[string]*samlAwsRole, len(roles))
+	items := make([]string, len(roles))
+	for i, v := range roles {
+		var menuKey string
+		if multiAccount {
+			// display account id if more than one account present
+			menuKey = fmt.Sprintf("%s (%s)", v.String(), v.AccountId())
+		} else {
+			// there is a wonderful bug hidden here which is due to the legacy of golang to C.
+			// When using "&v" here, this will store not the address of the element in the
+			// roles array but of v itself which will change its value with the next iteration.
+			//
+			// This does not happen in programming languages that have no pointers. golang has, which is unfortunate.
+			menuKey = v.String()
+		}
+		m[menuKey] = &roles[i]
+		items[i] = menuKey
+	}
 
-    result, err := menuSelector(label, items, nil)
-    if err != nil {
-        return nil, err
-    }
+	result, err := menuSelector(label, items, nil)
+	if err != nil {
+		return nil, err
+	}
 
-    if result == nil {
-        return nil, nil
-    }
+	if result == nil {
+		return nil, nil
+	}
 
-    return m[*result], nil
+	return m[*result], nil
 }
 
 func menuSelector(label string, items []string, defaultValue *string) (*string, error) {
 
-    if !*globalInteractive {
-        if defaultValue != nil {
-            return defaultValue, nil
-        }
-        return nil, fmt.Errorf("Selection required but not interactive")
-    }
+	if !*globalInteractive {
+		if defaultValue != nil {
+			return defaultValue, nil
+		}
+		return nil, fmt.Errorf("Selection required but not interactive")
+	}
 
-    sort.Strings(items)
-    cursorPos := 0
+	sort.Strings(items)
+	cursorPos := 0
 
-    for i, v := range items {
-        if defaultValue != nil && *defaultValue == v {
-            cursorPos = i
-        }
-    }
+	for i, v := range items {
+		if defaultValue != nil && *defaultValue == v {
+			cursorPos = i
+		}
+	}
 
-    prompt := promptui.Select{
-        Size:      8,
-        Label:     label,
-        Items:     items,
-        CursorPos: cursorPos,
-        HideHelp:  true,
-        Stdout:    &bellSkipper{},
-    }
+	prompt := promptui.Select{
+		Size:      8,
+		Label:     label,
+		Items:     items,
+		CursorPos: cursorPos,
+		HideHelp:  true,
+		Stdout:    &bellSkipper{},
+	}
 
-    index, _, err := prompt.Run()
+	index, _, err := prompt.Run()
 
-    if err != nil {
-        checkForKeyboard(err)
-        return nil, err
-    }
+	if err != nil {
+		checkForKeyboard(err)
+		return nil, err
+	}
 
-    return &items[index], nil
+	return &items[index], nil
 }
 
 func textInput(label string, defaultValue *string, hidden bool, validate promptui.ValidateFunc) (*string, error) {
 
-    if !*globalInteractive {
-        if defaultValue != nil {
-            return defaultValue, nil
-        }
-        return nil, fmt.Errorf("Input required but not interactive")
-    }
+	if !*globalInteractive {
+		if defaultValue != nil {
+			return defaultValue, nil
+		}
+		return nil, fmt.Errorf("Input required but not interactive")
+	}
 
-    prompt := promptui.Prompt{
-        Label:    label,
-        Validate: validate,
-        Stdout:   &bellSkipper{},
-    }
+	prompt := promptui.Prompt{
+		Label:    label,
+		Validate: validate,
+		Stdout:   &bellSkipper{},
+	}
 
-    if hidden {
-        prompt.Mask = '*'
-    }
+	if hidden {
+		prompt.Mask = '*'
+	}
 
-    if defaultValue != nil {
-        prompt.Default = *defaultValue
-    }
+	if defaultValue != nil {
+		prompt.Default = *defaultValue
+	}
 
-    value, err := prompt.Run()
+	value, err := prompt.Run()
 
-    if err != nil {
-        checkForKeyboard(err)
-        return nil, err
-    }
+	if err != nil {
+		checkForKeyboard(err)
+		return nil, err
+	}
 
-    return &value, nil
+	return &value, nil
 }
 
 func checkForKeyboard(err error) {
-    if err == promptui.ErrInterrupt {
-        log.Fatal("Terminated by ^C")
-    } else if err == promptui.ErrEOF {
-        log.Fatal("Terminated by ^D")
-    }
+	if err == promptui.ErrInterrupt {
+		log.Fatal("Terminated by ^C")
+	} else if err == promptui.ErrEOF {
+		log.Fatal("Terminated by ^D")
+	}
 }
 
 // bellSkipper implements an io.WriteCloser that skips the terminal bell
@@ -155,14 +155,14 @@ type bellSkipper struct{}
 // Write implements an io.WriterCloser over os.Stderr, but it skips the terminal
 // bell character.
 func (bs *bellSkipper) Write(b []byte) (int, error) {
-    const charBell = 7 // c.f. readline.CharBell
-    if len(b) == 1 && b[0] == charBell {
-        return 0, nil
-    }
-    return os.Stderr.Write(b)
+	const charBell = 7 // c.f. readline.CharBell
+	if len(b) == 1 && b[0] == charBell {
+		return 0, nil
+	}
+	return os.Stderr.Write(b)
 }
 
 // Close implements an io.WriterCloser over os.Stderr.
 func (bs *bellSkipper) Close() error {
-    return os.Stderr.Close()
+	return os.Stderr.Close()
 }
