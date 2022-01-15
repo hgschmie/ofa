@@ -27,7 +27,7 @@ func NewKeychainPassword(flags *pflag.FlagSet, promptForPassword bool) (*Keychai
 
 	keychainEntry := &KeychainPassword{}
 
-	rootConfigProvider := defaultConfigProvider()
+	rootConfigProvider := configStore.defaultConfigProvider()
 	flagConfigProvider := newFlagConfig(flags, false)
 
 	profileName := evaluateString(labelProfile,

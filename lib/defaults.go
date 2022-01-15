@@ -49,7 +49,7 @@ func CreateDefaultSettings(flags *pflag.FlagSet) (*DefaultSettings, error) {
 }
 
 func StoreDefaultSettings(globalSettings *DefaultSettings) error {
-	tree, err := loadConfigFile()
+	tree, err := configStore.loadConfigFile()
 	if err != nil {
 		return err
 	}
@@ -88,5 +88,5 @@ func StoreDefaultSettings(globalSettings *DefaultSettings) error {
 		return err
 	}
 
-	return storeConfigFile(tree)
+	return configStore.storeConfigFile(tree)
 }

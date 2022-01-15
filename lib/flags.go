@@ -29,7 +29,7 @@ func init() {
 
 func SetGlobalFlags(flags *pflag.FlagSet) {
 	// resolve the verbose flags etc.
-	rootConfigProvider := defaultConfigProvider()
+	rootConfigProvider := configStore.defaultConfigProvider()
 	flagConfigProvider := newFlagConfig(flags, false)
 	notFlagConfigProvider := newFlagConfig(flags, true)
 

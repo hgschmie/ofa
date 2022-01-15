@@ -55,7 +55,7 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
 
 	session := &LoginSession{ProfileName: ""}
 
-	session.rootConfig = defaultConfigProvider()
+	session.rootConfig = configStore.defaultConfigProvider()
 	session.flagConfig = newFlagConfig(flags, false)
 
 	// initialize the profile code. default profile name is stored in the root, next to all profile definitions

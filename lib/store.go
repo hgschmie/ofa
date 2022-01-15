@@ -11,20 +11,52 @@ import (
 )
 
 var (
-	store      *viper.Viper
-	configFile string
+	homeDir     *string
+	configStore *OfaStore
+	stateCache  *OfaStore
 )
 
 func init() {
-	store = viper.New()
-	store.SetConfigName("ofa.config")
-	store.SetConfigType("toml")
-
-	homeDir, err := userHomeDir()
+	var err error
+	homeDir, err = userHomeDir()
 	if err != nil {
 		log.Panicf("Could not determine home directory: %v", err)
 	}
-	configPath := filepath.Join(*homeDir, ".config")
+
+	configStore = newConfigStore()
+	stateCache = newStateCache()
+}
+
+//
+// LoadConfig loads the on-disk configuration files
+//
+func LoadConfig() error {
+	if err := configStore.store.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+
+	if err := stateCache.store.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+	return nil
+}
+
+type OfaStore struct {
+	store *viper.Viper
+	file  string
+}
+
+func newConfigStore() *OfaStore {
+	configStore := new(OfaStore)
+	configStore.store = viper.New()
+	configStore.store.SetConfigName("ofa.config")
+	configStore.store.SetConfigType("toml")
+
+	path := filepath.Join(*homeDir, ".config")
 
 	// there is some risk here by setting XDG_CONFIG_HOME to "/root/.config" and then run this
 	// program with a suid bit which would allow reading credentials of the root user
@@ -33,31 +65,79 @@ func init() {
 	// deserve what is coming.
 	xdgConfigHome := os.Getenv("XDG_CONFIG_HOME")
 	if len(xdgConfigHome) > 0 {
-		configPath = xdgConfigHome
+		path = xdgConfigHome
 	}
 
-	store.AddConfigPath(configPath)
+	configStore.store.AddConfigPath(path)
+	configStore.file = filepath.Join(path, "ofa.config")
 
-	configFile = filepath.Join(configPath, "ofa.config")
+	return configStore
 }
 
-//
-// LoadConfig loads the on-disk configuration file
-//
-func LoadConfig() error {
+func newStateCache() *OfaStore {
+	stateCache := new(OfaStore)
+	stateCache.store = viper.New()
+	stateCache.store.SetConfigName("ofa.state")
+	stateCache.store.SetConfigType("toml")
 
-	if err := store.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return err
+	path := filepath.Join(*homeDir, ".cache")
+
+	xdgConfigHome := os.Getenv("XDG_STATE_HOME")
+	if len(xdgConfigHome) > 0 {
+		path = xdgConfigHome
+	}
+
+	stateCache.store.AddConfigPath(path)
+	stateCache.file = filepath.Join(path, "ofa.state")
+
+	return stateCache
+}
+
+func (ofaStore *OfaStore) defaultConfigProvider() ConfigProvider {
+	if *globalNoConfig {
+		return newNullConfig()
+	}
+
+	return func(field string) configField {
+		return &StoreConfigProvider{ofaStore.store, field, "global config"}
+	}
+}
+
+func (ofaStore *OfaStore) subStore(field string) *viper.Viper {
+	store := ofaStore.store.Sub(field)
+	if store == nil {
+		// no such key exists
+		store = viper.New()
+	}
+
+	return store
+}
+
+func (ofaStore *OfaStore) loadConfigFile() (*toml.Tree, error) {
+	tree, err := toml.LoadFile(ofaStore.file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return toml.Load("")
 		}
+		return nil, err
 	}
-
-	return nil
+	return tree, nil
 }
 
-//
-// Store Config gives access to the viper backed store
-//
+func (ofaStore *OfaStore) storeConfigFile(tree *toml.Tree) error {
+	return storeFile(ofaStore.file, func(filename string) error {
+		if file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666); err != nil {
+			return err
+		} else {
+			defer file.Close()
+			if _, err := tree.WriteTo(file); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 type StoreConfigProvider struct {
 	store      *viper.Viper
 	field      string
@@ -87,16 +167,6 @@ func (p *StoreConfigProvider) boolValue() (*bool, string) {
 		return toBPError(p.store.GetBool(p.field), nil), p.location()
 	}
 	return nil, ""
-}
-
-func defaultConfigProvider() ConfigProvider {
-	if *globalNoConfig {
-		return newNullConfig()
-	}
-
-	return func(field string) configField {
-		return &StoreConfigProvider{store, field, "global config"}
-	}
 }
 
 func getString(store *viper.Viper, field string) *string {
@@ -156,29 +226,4 @@ func setBool(tree *toml.Tree, field string, value *bool) error {
 	}
 
 	return nil
-}
-
-func loadConfigFile() (*toml.Tree, error) {
-	tree, err := toml.LoadFile(configFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return toml.Load("")
-		}
-		return nil, err
-	}
-	return tree, nil
-}
-
-func storeConfigFile(tree *toml.Tree) error {
-	return storeFile(configFile, func(filename string) error {
-		if file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666); err != nil {
-			return err
-		} else {
-			defer file.Close()
-			if _, err := tree.WriteTo(file); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
 }

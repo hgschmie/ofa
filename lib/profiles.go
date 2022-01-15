@@ -92,15 +92,15 @@ func ListProfiles() (*DefaultSettings, map[string]ProfileSettings) {
 
 	if !*globalNoConfig {
 
-		d.Verbose = getBool(store, globalKeyVerbose)
-		d.Interactive = getBool(store, globalKeyInteractive)
+		d.Verbose = getBool(configStore.store, globalKeyVerbose)
+		d.Interactive = getBool(configStore.store, globalKeyInteractive)
 		// load the profile defaults
-		d.Profile = *loadProfile(store, nil)
-		d.Profile.ProfileName = getString(store, globalKeyProfile)
+		d.Profile = *loadProfile(configStore.store, nil)
+		d.Profile.ProfileName = getString(configStore.store, globalKeyProfile)
 
-		for k := range store.AllSettings() {
+		for k := range configStore.store.AllSettings() {
 			if profile, ok := stripProfileKey(k); ok {
-				substore := store.Sub(k)
+				substore := configStore.store.Sub(k)
 				p[*profile] = *loadProfile(substore, profile)
 			}
 		}
@@ -173,7 +173,7 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
 }
 
 func StoreProfileSettings(profileSettings *ProfileSettings) error {
-	tree, err := loadConfigFile()
+	tree, err := configStore.loadConfigFile()
 	if err != nil {
 		return err
 	}
@@ -206,11 +206,11 @@ func StoreProfileSettings(profileSettings *ProfileSettings) error {
 		return err
 	}
 
-	return storeConfigFile(tree)
+	return configStore.storeConfigFile(tree)
 }
 
 func DeleteProfileSettings(profileName string) error {
-	tree, err := loadConfigFile()
+	tree, err := configStore.loadConfigFile()
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func DeleteProfileSettings(profileName string) error {
 	if err := tree.Delete(asProfileKey(profileName)); err != nil {
 		return nil
 	}
-	return storeConfigFile(tree)
+	return configStore.storeConfigFile(tree)
 }
 
 func SelectProfile(flags *pflag.FlagSet) *ProfileSettings {
@@ -272,11 +272,7 @@ func newProfileConfigProvider(profileName string) ConfigProvider {
 		return newNullConfig()
 	}
 
-	store := store.Sub(asProfileKey(profileName))
-	if store == nil {
-		// no such key exists
-		store = viper.New()
-	}
+	store := configStore.subStore(asProfileKey(profileName))
 
 	return func(field string) configField {
 		return &StoreConfigProvider{store, field, fmt.Sprintf("profile [%s]", profileName)}
