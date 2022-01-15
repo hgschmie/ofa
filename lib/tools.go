@@ -157,6 +157,30 @@ func validateURL(input string) error {
 	return nil
 }
 
+func displayStringSetting(label string, value *string) {
+	if value == nil {
+		fmt.Printf("%s <unset>\n", padLabel(label))
+	} else {
+		fmt.Printf("%s %s\n", padLabel(label), *value)
+	}
+}
+
+func displayBoolSetting(label string, value *bool) {
+	if value == nil {
+		fmt.Printf("%s <unset>\n", padLabel(label))
+	} else {
+		fmt.Printf("%s %t\n", padLabel(label), *value)
+	}
+}
+
+func displayIntSetting(label string, value *int64) {
+	if value == nil {
+		fmt.Printf("%s <unset>\n", padLabel(label))
+	} else {
+		fmt.Printf("%s %d\n", padLabel(label), *value)
+	}
+}
+
 func logStringSetting(label string, value *string) {
 	if *globalVerbose {
 		if value == nil {

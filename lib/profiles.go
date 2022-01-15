@@ -63,26 +63,25 @@ type IdpProfile interface {
 func (p *ProfileSettings) Display(profileName *string) {
 	if profileName != nil {
 		// actual profile
-		Information("")
-		Information("**** Profile [%s - %s] settings:", *profileName, p.ProfileType)
+		fmt.Println("")
+
+		fmt.Printf("**** Profile [ %s ] settings:\n", *profileName)
+
+		displayStringSetting(profilePrompt(profileName, labelProfileType), p.ProfileType)
+
 	} else {
 		// global settings
-		logStringSetting(profilePrompt(profileName, labelProfile), p.ProfileName)
+		displayStringSetting(profilePrompt(profileName, labelProfile), p.ProfileName)
 	}
-	logStringSetting(profilePrompt(profileName, labelUser), p.User)
-	logStringSetting(profilePrompt(profileName, labelURL), p.URL)
+	displayStringSetting(profilePrompt(profileName, labelUser), p.User)
+	displayStringSetting(profilePrompt(profileName, labelURL), p.URL)
 
 	for _, provider := range p.identityProviders {
-		//err := provider.Load(p.profileSettings)
-		//if err != nil {
-		//    log.Fatalf("Could not load settings for '%v' in profile '%v': %v", name, profileName, err)
-		//}
-
 		provider.Log(profileName)
 	}
 
-	logStringSetting(profilePrompt(profileName, labelRole), p.AwsRole)
-	logIntSetting(profilePrompt(profileName, labelSessionTime), p.AwsSessionTime)
+	displayStringSetting(profilePrompt(profileName, labelRole), p.AwsRole)
+	displayIntSetting(profilePrompt(profileName, labelSessionTime), p.AwsSessionTime)
 }
 
 func ListProfiles() (*DefaultSettings, map[string]ProfileSettings) {

@@ -1,6 +1,7 @@
 package ofa
 
 import (
+	"fmt"
 	"github.com/spf13/pflag"
 )
 
@@ -11,10 +12,10 @@ type DefaultSettings struct {
 }
 
 func (g *DefaultSettings) Display() {
-	Information("**** Default settings:")
+	fmt.Println("**** Default settings:")
 
-	logBoolSetting(labelVerbose, g.Verbose)
-	logBoolSetting(labelInteractive, g.Interactive)
+	displayBoolSetting(labelVerbose, g.Verbose)
+	displayBoolSetting(labelInteractive, g.Interactive)
 
 	g.Profile.Display(nil)
 }

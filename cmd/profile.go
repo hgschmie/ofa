@@ -16,6 +16,7 @@ func init() {
 	profileCmd.AddCommand(profileRemoveCmd)
 	profileCmd.AddCommand(profileUpdateCmd)
 	profileCmd.AddCommand(profileListCmd)
+	profileCmd.AddCommand(profileShowCmd)
 
 	profileCreateCmd.Flags().String(ofa.FlagProfile, "", "The profile to create.")
 	profileCreateCmd.Flags().String(ofa.FlagSetProfileType, "", ofa.FlagDescSetProfileType)
@@ -45,6 +46,9 @@ func init() {
 
 	profileUpdateCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)
 	profileUpdateCmd.Flags().Int64(ofa.FlagSetSessionTime, 0, ofa.FlagDescSetSessionTime)
+
+	profileShowCmd.Flags().String(ofa.FlagProfile, "", "The profile to show.")
+
 }
 
 var (
@@ -141,9 +145,26 @@ var (
 				profileNames = append(profileNames, k)
 			}
 
-			fmt.Printf("**** Available profiles: %s", strings.Join(profileNames, ", "))
+			fmt.Printf("**** Available profiles: %s\n", strings.Join(profileNames, ", "))
+		},
+	}
+
+	profileShowCmd = &cobra.Command{
+		Use:   "show",
+		Short: "show profiles",
+		Long:  "Show profile settings.",
+		Run: func(cmd *cobra.Command, args []string) {
+
+			ofa.ForceBatch()
+
+			profile := ofa.SelectProfile(cmd.Flags())
+
+			_, p := ofa.ListProfiles()
+
 			for _, v := range p {
-				v.Display(v.ProfileName)
+				if profile == nil || *v.ProfileName == *profile.ProfileName {
+					v.Display(v.ProfileName)
+				}
 			}
 		},
 	}

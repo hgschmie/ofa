@@ -50,8 +50,11 @@ func SetGlobalFlags(flags *pflag.FlagSet) {
 		constantBoolValue(isTTY(os.Stderr))) // by default, the app prompts for things if connected to a tty
 }
 
-func DisplayGlobalFlags() {
+func ForceBatch() {
+	globalInteractive = toBP(false)
+}
 
+func DisplayGlobalFlags() {
 	// here the verbose flag is set correctly.
 	Information("**** Global Flags:")
 	Information("%s %t (%s)", padLabel(labelIgnoreConfig), *globalNoConfig, noConfigSource)
