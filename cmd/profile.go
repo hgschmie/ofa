@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	ofa "github.com/hgschmie/ofa/lib"
+	ofa "github.com/hgschmie/ofa/v3/lib"
 )
 
 func init() {

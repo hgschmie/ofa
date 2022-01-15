@@ -5,7 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/hgschmie/ofa/cmd"
+	"github.com/hgschmie/ofa/v3/cmd"
 )
 
 func init() {

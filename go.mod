@@ -1,4 +1,4 @@
-module github.com/hgschmie/ofa
+module github.com/hgschmie/ofa/v3
 
 go 1.17
 
