@@ -12,7 +12,7 @@ builds:
       - arm64
       # Default is `-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser`.
     ldflags:
-      - -s -w -X github.com/hgschmie/ofa/cmd.BuildVersion={{.Version}} -X github.com/hgschmie/ofa/cmd.BuildCommit={{.Commit}} -X github.com/hgschmie/ofa/cmd.BuildDate={{.Date}} -X github.com/hgschmie/ofa/cmd.BuiltBy=goreleaser
+      - -s -w -X github.com/hgschmie/ofa/v3/cmd.BuildVersion={{.Version}} -X github.com/hgschmie/ofa/v3/cmd.BuildCommit={{.Commit}} -X github.com/hgschmie/ofa/v3/cmd.BuildDate={{.Date}} -X github.com/hgschmie/ofa/v3/cmd.BuiltBy=goreleaser
   - id: "linux"
     env:
       - CGO_ENABLED=0
@@ -26,7 +26,7 @@ builds:
     goarm:
       - 7
     ldflags:
-      - -s -w -X github.com/hgschmie/ofa/cmd.BuildVersion={{.Version}} -X github.com/hgschmie/ofa/cmd.BuildCommit={{.Commit}} -X github.com/hgschmie/ofa/cmd.BuildDate={{.Date}} -X github.com/hgschmie/ofa/cmd.BuiltBy=goreleaser
+      - -s -w -X github.com/hgschmie/ofa/v3/cmd.BuildVersion={{.Version}} -X github.com/hgschmie/ofa/v3/cmd.BuildCommit={{.Commit}} -X github.com/hgschmie/ofa/v3/cmd.BuildDate={{.Date}} -X github.com/hgschmie/ofa/v3/cmd.BuiltBy=goreleaser
 archives:
   - replacements:
       darwin: Darwin
