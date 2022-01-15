@@ -309,6 +309,10 @@ credentials file **using the profile name**.
 Writing the credentials file can be avoided by using the `--eval` flag. In this case, `ofa` prints output that can be
 evaluated in the calling shell.
 
+When setting default values for profile and AWS role, `ofa login` can operate without any prompting the user. However,
+sometimes it is useful to explicitly force profile or role selection. The `--no-default-profile` and `--no-default-role`
+flags can be used for this.
+
 ## Examples
 
 ### Okta
