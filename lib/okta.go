@@ -448,6 +448,20 @@ func (p *OktaIdentityProvider) oktaStateMfaChallenge() error {
 		challengeResponse.PassCode = &result
 	case "WAITING":
 		time.Sleep(1 * time.Second)
+
+		// find factor to see whether there is an additional challenge
+		if p.correctAnswer == nil {
+			for _, factor := range p.authTransaction.Embedded.Factor {
+				if factor.ID == p.mfaFactor.ID {
+					if factor.Embedded.Challenge.CorrectAnswer != nil {
+						p.correctAnswer = factor.Embedded.Challenge.CorrectAnswer
+						fmt.Printf("Okta 3-number verification, correct answer is %s", *p.correctAnswer)
+						return nil
+					}
+				}
+			}
+		}
+
 	case "CANCELLED":
 	case "REJECTED":
 		return fmt.Errorf("aborted by user")
