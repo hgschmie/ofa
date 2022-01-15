@@ -1,0 +1,3 @@
+kind: Added
+body: support for shell autocompletion generation with `completion` command
+time: 2022-01-14T21:01:49.839101-08:00

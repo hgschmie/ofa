@@ -1,0 +1,3 @@
+kind: Added
+body: new options `--no-default-profile` and `--no-default-role` for the `login` command
+time: 2022-01-14T21:02:18.286249-08:00
