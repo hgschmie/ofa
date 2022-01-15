@@ -35,6 +35,16 @@ see [SAML verify factor API call with authentication denied](https://stackoverfl
 **Auth0 does not work**. I could not figure out how to get this to
 work [Auth0 Forum Thread](https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354).
 
+## Bonus feature: Command line completion
+
+`ofa` supports command line completion for `bash`, `fish` and `zsh`, e.g. for bash:
+
+```bash
+$ eval $(ofa completion bash)
+```
+
+will activate TAB-completion for all `ofa` commands.
+
 ## Using Okta
 
 ### Prerequisite: Setting up Okta and AWS
@@ -44,16 +54,6 @@ Okta application [AWS Account Federation](https://www.okta.com/integrations/aws-
 
 This requires a regular Okta account or at least an Okta trial account; developer accounts do not allow installation of
 applications.
-
-### Bonus feature: Command line completion
-
-`ofa` supports command line completion for `bash`, `fish` and `zsh`, e.g. for bash:
-
-```bash
-$ eval $(ofa completion bash)
-```
-
-will activate TAB-completion for all `ofa` commands.
 
 ### Okta configuration reference
 
