@@ -51,7 +51,7 @@ type identityProvider interface {
 //
 // CreateLoginSession creates a new configuration object with all the fields filled in
 //
-func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
+func CreateLoginSession(flags *pflag.FlagSet, noProfile bool) (*LoginSession, error) {
 
 	session := &LoginSession{ProfileName: ""}
 
@@ -59,10 +59,11 @@ func CreateLoginSession(flags *pflag.FlagSet) (*LoginSession, error) {
 	session.flagConfig = newFlagConfig(flags, false)
 
 	// initialize the profile code. default profile name is stored in the root, next to all profile definitions
+
 	profileName := evaluateString(labelProfile,
-		session.flagConfig(FlagProfile),      // --profile flag
-		session.rootConfig(globalKeyProfile), // root level configuration key "profile"
-		profileMenu(true))                    // interactive prompt
+		session.flagConfig(FlagProfile),                                        // --profile flag
+		newConditionalConfig(!noProfile, session.rootConfig(globalKeyProfile)), // root level configuration key "profile"
+		profileMenu(true)) // interactive prompt
 
 	session.profileConfig = newNullConfig()
 

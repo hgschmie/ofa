@@ -16,7 +16,7 @@ import (
 func init() {
 	rootCmd.AddCommand(loginCmd)
 
-	loginCmd.Flags().String(ofa.FlagProfile, "", "The profile to use.")
+	loginCmd.Flags().String(ofa.FlagProfile, "", ofa.FlagDescProfile)
 	loginCmd.Flags().String(ofa.FlagUser, "", ofa.FlagDescUser)
 	loginCmd.Flags().String(ofa.FlagURL, "", ofa.FlagDescURL)
 
@@ -30,12 +30,15 @@ func init() {
 	loginCmd.Flags().String(ofa.FlagRole, "", ofa.FlagDescRole)
 	loginCmd.Flags().Int64(ofa.FlagSessionTime, 0, ofa.FlagDescSessionTime)
 
-	loginCmd.Flags().BoolVar(&noSave, "eval", false, "Do not save AWS credentials, echo on stdout for eval.")
-
+	loginCmd.Flags().BoolVar(&noSave, ofa.FlagEval, false, ofa.FlagDescEval)
+	loginCmd.Flags().BoolVar(&noProfile, ofa.FlagNoProfile, false, ofa.FlagDescNoProfile)
+	loginCmd.Flags().BoolVar(&roleSelection, ofa.FlagNoRole, false, ofa.FlagDescNoRole)
 }
 
 var (
-	noSave = false
+	noSave        = false
+	noProfile     = false
+	roleSelection = false
 
 	loginCmd = &cobra.Command{
 		Use:   "login",
@@ -46,7 +49,7 @@ var (
 			ofa.DisplayGlobalFlags()
 			ofa.Information("**** Login Session:")
 
-			config, err := ofa.CreateLoginSession(cmd.Flags())
+			config, err := ofa.CreateLoginSession(cmd.Flags(), noProfile)
 			if err != nil {
 				log.Fatalf("Could not create config: %v", err)
 			}
@@ -62,7 +65,7 @@ var (
 				log.Fatalf("Could not log into %s: %v", config.ProfileType, err)
 			}
 
-			arnRole, err := ofa.SelectAwsRoleFromSaml(config, samlResponse)
+			arnRole, err := ofa.SelectAwsRoleFromSaml(config, samlResponse, roleSelection)
 			if err != nil {
 				log.Fatalf("Could not parse SAML assertion: %v", err)
 			}

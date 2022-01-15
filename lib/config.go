@@ -141,6 +141,18 @@ func newNullConfig() ConfigProvider {
 }
 
 //
+// Conditional Config will return values from the wrapped
+// config if the condition is true
+//
+func newConditionalConfig(condition bool, delegate configField) configField {
+	if condition {
+		return delegate
+	} else {
+		return &nullConfig{}
+	}
+}
+
+//
 // Default Config always return a default value
 //
 type constantConfig struct {

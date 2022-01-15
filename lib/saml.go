@@ -90,7 +90,7 @@ func newSamlAwsRole(s string, sessionDuration int64) (*samlAwsRole, error) {
 	return result, nil
 }
 
-func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, error) {
+func SelectAwsRoleFromSaml(session *LoginSession, saml *string, roleSelection bool) (*samlAwsRole, error) {
 
 	Information("**** Selecting AWS role from SAML response")
 
@@ -128,7 +128,7 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, e
 			return nil, err
 		}
 
-		if session.AwsRole == nil || strings.ToLower(*session.AwsRole) == strings.ToLower(samlRole.String()) {
+		if session.AwsRole == nil || roleSelection || strings.ToLower(*session.AwsRole) == strings.ToLower(samlRole.String()) {
 			if accountIdSeen == nil {
 				accountIdSeen = toSP(samlRole.AccountId())
 			} else {

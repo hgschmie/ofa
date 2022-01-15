@@ -23,6 +23,9 @@ const (
 
 	// value flags
 
+	FlagEval        = "eval"
+	FlagNoProfile   = "no-default-profile"
+	FlagNoRole      = "no-default-role"
 	FlagPassword    = "password"
 	FlagProfile     = "profile"
 	FlagRole        = "role"
@@ -42,12 +45,16 @@ const (
 	FlagDescSetRole        = "Sets the AWS role to assume."
 	FlagDescSetSessionTime = "Sets the AWS session time."
 
+	FlagDescEval        = "Do not save AWS credentials, echo on stdout for eval."
 	FlagDescUser        = "Username to use."
+	FlagDescProfile     = "The profile to use."
 	FlagDescProfileType = "Profile Type to use " + allAuthTypes + "."
 	FlagDescPassword    = "Password to use."
 	FlagDescRole        = "AWS role to assume."
 	FlagDescSessionTime = "AWS session time to use."
 	FlagDescURL         = "Base/organization URL to use."
+	FlagDescNoProfile   = "Ignore default profile."
+	FlagDescNoRole      = "Ignore default role."
 
 	profilePrefix = "profile_"
 
