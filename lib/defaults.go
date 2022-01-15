@@ -82,7 +82,10 @@ func StoreDefaultSettings(globalSettings *DefaultSettings) error {
 
 	// AWS
 
-	if err := setString(tree, profileKeyRole, globalSettings.Profile.AwsRole); err != nil {
+	if err := setString(tree, profileKeyAwsAccount, globalSettings.Profile.AwsAccount); err != nil {
+		return err
+	}
+	if err := setString(tree, profileKeyAwsRole, globalSettings.Profile.AwsRole); err != nil {
 		return err
 	}
 	if err := setInt(tree, profileKeySessionTime, globalSettings.Profile.AwsSessionTime); err != nil {

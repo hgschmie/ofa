@@ -44,7 +44,7 @@ type samlAwsRole struct {
 	SessionTime  int64 // The SAML Request contains a session time, but this is not usable as the AWS roles may be configured to a different max session duration.
 }
 
-func (role samlAwsRole) String() string {
+func (role samlAwsRole) Role() string {
 	return strings.TrimPrefix(role.RoleArn.Resource, "role/")
 }
 
@@ -58,6 +58,28 @@ func (role samlAwsRole) DisplayName() string {
 	} else {
 		return role.AccountId()
 	}
+}
+
+// match the role name stored in this role
+func (role samlAwsRole) matchRole(roleName *string) bool {
+	if roleName == nil {
+		return false
+	}
+
+	return strings.ToLower(*roleName) == strings.ToLower(role.Role())
+}
+
+// match the account that this role belongs to
+func (role samlAwsRole) matchAccount(accountName *string) bool {
+	if accountName == nil {
+		return false
+	}
+	account := strings.ToLower(*accountName)
+	if role.AccountName != nil && account == strings.ToLower(*role.AccountName) {
+		return true
+	}
+
+	return account == role.AccountId()
 }
 
 func newSamlAwsRole(s string, sessionDuration int64) (*samlAwsRole, error) {
@@ -112,9 +134,7 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string, roleSelection bo
 
 	var allRoles []samlAwsRole
 
-	// are roles from more than one account present?
-	multiAccount := false
-	var accountIdSeen *string = nil
+	indent := 0
 
 	for roles.MoveNext() {
 		nodeText := roles.Current().Value()
@@ -128,14 +148,22 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string, roleSelection bo
 			return nil, err
 		}
 
-		if session.AwsRole == nil || roleSelection || strings.ToLower(*session.AwsRole) == strings.ToLower(samlRole.String()) {
-			if accountIdSeen == nil {
-				accountIdSeen = toSP(samlRole.AccountId())
-			} else {
-				// seen roles from more than one account -> This is a multi-account role list
-				if *accountIdSeen != samlRole.AccountId() {
-					multiAccount = true
-				}
+		accountMatch := samlRole.matchAccount(session.AwsAccount)
+		roleMatch := samlRole.matchRole(session.AwsRole)
+
+		roleWildcard := accountMatch && session.AwsRole == nil
+		accountWildcard := roleMatch && session.AwsAccount == nil
+		exactMatch := accountMatch && roleMatch
+		anyMatch := session.AwsRole == nil && session.AwsAccount == nil
+
+		if roleWildcard || // matches account exact, bring in any role
+			accountWildcard || // matches role exact, bring in any account
+			exactMatch || // match both account and role exactly
+			anyMatch || // nothing selected, bring in everything
+			roleSelection { // enforced selection
+
+			if indent < len(samlRole.Role()) {
+				indent = len(samlRole.Role())
 			}
 			allRoles = append(allRoles, *samlRole)
 		}
@@ -149,7 +177,7 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string, roleSelection bo
 	case 1:
 		arnRole = &allRoles[0]
 	default:
-		result, err := awsRoleMenuSelector("Select AWS Role", allRoles, multiAccount)
+		result, err := awsRoleMenuSelector("Select AWS Role", allRoles, indent)
 		if err != nil {
 			return nil, err
 		}

@@ -33,22 +33,11 @@ func interactiveMenuSelector(label string, entries map[string]*string, defaultVa
 	return entries[*result], nil
 }
 
-func awsRoleMenuSelector(label string, roles []samlAwsRole, multiAccount bool) (*samlAwsRole, error) {
+func awsRoleMenuSelector(label string, roles []samlAwsRole, indent int) (*samlAwsRole, error) {
 	m := make(map[string]*samlAwsRole, len(roles))
 	items := make([]string, len(roles))
 	for i, v := range roles {
-		var menuKey string
-		if multiAccount {
-			// display account id if more than one account present
-			menuKey = fmt.Sprintf("%s (%s)", v.String(), v.DisplayName())
-		} else {
-			// there is a wonderful bug hidden here which is due to the legacy of golang to C.
-			// When using "&v" here, this will store not the address of the element in the
-			// roles array but of v itself which will change its value with the next iteration.
-			//
-			// This does not happen in programming languages that have no pointers. golang has, which is unfortunate.
-			menuKey = v.String()
-		}
+		menuKey := fmt.Sprintf("%s (%s)", padWidth(v.Role(), indent), v.DisplayName())
 		m[menuKey] = &roles[i]
 		items[i] = menuKey
 	}

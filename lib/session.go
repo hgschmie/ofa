@@ -26,6 +26,7 @@ type LoginSession struct {
 	User           string   `validate:"required"`
 	Password       *string  `validate:"required"`
 	ProfileType    string   `validate:"required,oneof=okta auth0 onelogin"`
+	AwsAccount     *string  `validate:"omitempty"`
 	AwsRole        *string  `validate:"omitempty"`
 	AwsSessionTime *int64   `validate:"omitempty,gte=3600,lte=86400"` // one hour to one day
 
@@ -112,10 +113,15 @@ func CreateLoginSession(flags *pflag.FlagSet, noProfile bool) (*LoginSession, er
 		return nil, err
 	}
 
-	session.AwsRole = evaluateString(labelRole,
-		session.flagConfig(FlagRole),
-		session.profileConfig(profileKeyRole),
-		session.rootConfig(profileKeyRole))
+	session.AwsAccount = evaluateString(labelAwsAccount,
+		session.flagConfig(FlagAwsAccount),
+		session.profileConfig(profileKeyAwsAccount),
+		session.rootConfig(profileKeyAwsAccount))
+
+	session.AwsRole = evaluateString(labelAwsRole,
+		session.flagConfig(FlagAwsRole),
+		session.profileConfig(profileKeyAwsRole),
+		session.rootConfig(profileKeyAwsRole))
 
 	session.AwsSessionTime = evaluateInt(labelSessionTime,
 		session.flagConfig(FlagSessionTime),

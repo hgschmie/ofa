@@ -24,7 +24,7 @@ to access the necessary SAML Assertion.
 
 Only documented APIs are used. Does not support all available authentication methods (patches for WebAuthn wanted!).
 
-Supports the Multi-Account application (will prompt for all roles from all accounts).
+Supports the Multi-Account application (will prompt for matching accounts and roles).
 
 There are some minor issues when Push notifications get denied on the mobile app,
 see [SAML verify factor API call with authentication denied](https://stackoverflow.com/questions/68478392/onelogin-saml-assertion-verify-factor-with-authentication-denied)
@@ -133,19 +133,10 @@ When using MFA, the user account must be already enrolled using the MFA. `ofa` d
 #### OneLogin Multi Account setup
 
 OneLogin allows using a single OneLogin application to log into multiple AWS accounts. When using the Application from a
-brower, AWS will present a selection screen where the accounts and all available roles are listed for user selection.
+brower, AWS will present a selection screen where the accounts and roles are listed for user selection.
 
-`ofa` supports this mode, however there are some caveats:
-
-- When the set of roles contains more than one AWS account and the user needs to choose between multiple roles from
-  multiple accounts, the menu selection will contain the AWS account ids in parentheses. If the AWS accounts are configured
-  with Account aliases, the aliases will be displayed instead.
-- When the same role name is presented in multiple accounts, role selection will always fall back to the interactive
-  dialog as `ofa` only stores the role name and not the account id in its configuration. This may be fixed in a future
-  version.
-
-If you have full control over the AWS role and account setup, it is recommended to prefix the role names for SAML 2.0
-federation roles with some account information (e.g. "dev" or "prod") to make them easier to differentiate.
+This is the preferred way to setup multiple accounts and roles. The selection screen for role selection will either
+list the numeric AWS account id or, if an account alias is configured, the account alias.
 
 ## Usage
 
@@ -157,7 +148,7 @@ Each profile contains
 
 * IdP Type and configuration
 * Login information and authentication method
-* AWS role to assume
+* AWS account and role to assume
 * AWS session time
 
 `ofa` uses four sources for each value in order of precedence:
@@ -230,7 +221,7 @@ ofa --set-interactive=false --batch
 * IdP type and authentication method
 * Base/Organization URL
 * IdP specific settings
-* AWS role to assume
+* AWS account and role to assume
 * AWS session time
 
 ### ofa profile command
@@ -244,7 +235,7 @@ Each profile may consist of
 * IdP type and authentication method
 * Base/Organization URL
 * IdP specific settings
-* AWS role to assume
+* AWS account and role to assume
 * AWS session time
 
 All parameters are optional, the tool may fall back to its defaults or prompt in interactive mode.
@@ -297,8 +288,8 @@ allow `ofa` access to a keychain entry as this removes a security factor.
 
 ### ofa login command
 
-The `ofa login` command authenticates using the selected IdP and then uses the information to log into AWS, assume a
-role and create credentials.
+The `ofa login` command authenticates using the selected IdP and then uses the information to log into AWS, assume an
+account and a role and create credentials.
 
 This command uses all available sources (command line parameters, profile settings, default settings and interactive
 input).
@@ -309,8 +300,8 @@ credentials file **using the profile name**.
 Writing the credentials file can be avoided by using the `--eval` flag. In this case, `ofa` prints output that can be
 evaluated in the calling shell.
 
-When setting default values for profile and AWS role, `ofa login` can operate without any prompting the user. However,
-sometimes it is useful to explicitly force profile or role selection. The `--no-default-profile` and `--no-default-role`
+When setting default values for profile, AWS account and AWS role, `ofa login` can operate without any prompting the user.
+However, sometimes it is useful to explicitly force profile or role selection. The `--no-default-profile` and `--no-default-role`
 flags can be used for this.
 
 ## Examples
@@ -387,9 +378,9 @@ INFO **** Okta login successful
 INFO **** Fetching Okta SAML response
 INFO **** Selecting AWS role from SAML response
 ? Select AWS Role:
-  ▸ role_1
-    role_2
-    role_3
+  ▸ role_1 account-id
+    role_2 account-id
+    role_3 account-id
 ```
 
 after selecting a role, `ofa` writes credentials in the AWS credentials file and exits.
@@ -439,10 +430,12 @@ URL and username exist as defaults, this command only prompts for the password a
 ```bash
 ofa profile create --batch \
                    --profile=new_profile \
+                   --set-account=<aws account for role>
                    --set-role=<aws role to assume>
 ```
 
-This command creates the `new_profile` profile and assigns a specific role to assume.
+This command creates the `new_profile` profile and assigns a specific AWS account and role to assume.
+The role and account parameter are optional, if any is missing, `ofa` will present a menu selection with all matching roles.
 
 #### Optional: Make the new profile the default
 
@@ -480,33 +473,32 @@ prompt for role selection:
 
 ```
 INFO **** Global Flags:
-INFO Ignore Configuration:     false (default value)
-INFO Verbose:                  true (flag: 'verbose')
-INFO Interactive:              true (default value)
+INFO Ignore Configuration:               false (default value)
+INFO Verbose:                            true (flag: 'verbose')
+INFO Interactive:                        true (default value)
 INFO **** Login Session:
-INFO Profile name:             dev (flag: 'profile')
-INFO Profile type:             onelogin (global config, key: 'idp_type')
-INFO Username:                 <username> (global config, key: 'user')
-INFO Base/organization URL:    https://<subdomain>.onelogin.com/ (global config, key: 'url')
-INFO Password:                 <configured> (Keychain for Okta URL 'https://<subdomain>.onelogin.com/', username '<username>')
-INFO Onelogin auth method:     push (global config, key: 'onelogin_auth_method')
-INFO Onelogin Application Client Id: <api authencation client id> (global config, key: 'onelogin_client_id')
+INFO Profile name:                       dev (flag: 'profile')
+INFO Profile type:                       onelogin (global config, key: 'idp_type')
+INFO Username:                           <username> (global config, key: 'user')
+INFO Base/organization URL:              https://<subdomain>.onelogin.com/ (global config, key: 'url')
+INFO Password:                           <configured> (Keychain for Okta URL 'https://<subdomain>.onelogin.com/', username '<username>')
+INFO Onelogin auth method:               push (global config, key: 'onelogin_auth_method')
+INFO Onelogin Application Client Id:     <api authencation client id> (global config, key: 'onelogin_client_id')
 INFO Onelogin Application Client Secret: <configured> (global config, key: 'onelogin_client_secret')
-INFO Onelogin Application Id:  <app id> (global config, key: 'onelogin_app_id')
-INFO Onelogin API Url:         https://api.us.onelogin.com/ (global config, key: 'onelogin_api_url')
-INFO AWS session duration:     3600 (profile [dev], key: 'aws_session_time')
+INFO Onelogin Application Id:            <app id> (global config, key: 'onelogin_app_id')
+INFO Onelogin API Url:                   https://api.us.onelogin.com/ (global config, key: 'onelogin_api_url')
+INFO AWS session duration:               3600 (profile [dev], key: 'aws_session_time')
 INFO **** Logging into Onelogin
 INFO **** Initiating MFA Challenge
 INFO **** Selecting AWS role from SAML response
 ? Select AWS Role:
-  ▸ role_A (aws_account_id 1)
-    role_B (aws_account_id 1)
-    role_1 (aws_account_id 2)
-    role_2 (aws_account_id 2)
-    role_A (aws_account_id 3)
-    role_B (aws_account_id 3)
+  ▸ role_A aws_account 1
+    role_B aws_account 1
+    role_1 aws_account 2
+    role_2 aws_account 2
+    role_A aws_account 3
+    role_B aws_account 3
 ```
 
-In this example, there are multiple AWS accounts configured (aws_account_id 1-3) and for some of them, the role names
-are overlapping (role_A and role_B are present in aws_account_id 1 and aws_account_id 2).
-
+In this example, there are multiple AWS accounts configured (aws_account 1-3) and for some of them, the role names
+are overlapping (role_A and role_B are present in aws_account 1 and aws_account 2).

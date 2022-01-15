@@ -16,7 +16,8 @@ const (
 
 	FlagSetProfile     = "set-profile"
 	FlagSetProfileType = "set-profile-type"
-	FlagSetRole        = "set-role"
+	FlagSetAwsAccount  = "set-account"
+	FlagSetAwsRole     = "set-role"
 	FlagSetSessionTime = "set-session-time"
 	FlagSetUser        = "set-user"
 	FlagSetURL         = "set-url"
@@ -28,7 +29,8 @@ const (
 	FlagNoRole      = "no-default-role"
 	FlagPassword    = "password"
 	FlagProfile     = "profile"
-	FlagRole        = "role"
+	FlagAwsAccount  = "account"
+	FlagAwsRole     = "role"
 	FlagSessionTime = "session-time"
 	FlagUser        = "user"
 	FlagProfileType = "profile-type"
@@ -42,7 +44,8 @@ const (
 	FlagDescSetProfileType = "Sets the profile type " + allAuthTypes + "."
 	FlagDescSetUser        = "Sets the username."
 
-	FlagDescSetRole        = "Sets the AWS role to assume."
+	FlagDescSetAwsAccount  = "Sets the AWS account for the role to assume."
+	FlagDescSetAwsRole     = "Sets the AWS role to assume."
 	FlagDescSetSessionTime = "Sets the AWS session time."
 
 	FlagDescEval        = "Do not save AWS credentials, echo on stdout for eval."
@@ -50,7 +53,8 @@ const (
 	FlagDescProfile     = "The profile to use."
 	FlagDescProfileType = "Profile Type to use " + allAuthTypes + "."
 	FlagDescPassword    = "Password to use."
-	FlagDescRole        = "AWS role to assume."
+	FlagDescAwsAccount  = "AWS account for the role to assume."
+	FlagDescAwsRole     = "AWS role to assume."
 	FlagDescSessionTime = "AWS session time to use."
 	FlagDescURL         = "Base/organization URL to use."
 	FlagDescNoProfile   = "Ignore default profile."
@@ -70,7 +74,8 @@ const (
 	profileKeyUser        = "user"
 	profileKeyURL         = "url"
 
-	profileKeyRole        = "aws_role"
+	profileKeyAwsAccount  = "aws_account"
+	profileKeyAwsRole     = "aws_role"
 	profileKeySessionTime = "aws_session_time"
 
 	// global labels
@@ -84,7 +89,8 @@ const (
 	// profile labels
 
 	labelPassword    = "Password"
-	labelRole        = "AWS role"
+	labelAwsAccount  = "AWS account"
+	labelAwsRole     = "AWS role"
 	labelSessionTime = "AWS session duration"
 	labelUser        = "Username"
 	labelURL         = "Base/organization URL"

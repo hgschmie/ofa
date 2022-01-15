@@ -14,9 +14,10 @@ type ProfileSettings struct {
 	ProfileName       *string
 	ProfileType       *string `validate:"omitempty,oneof=okta auth0 onelogin"`
 	URL               *string `validate:"omitempty,url"`
-	User              *string
-	AwsRole           *string
-	AwsSessionTime    *int64 `validate:"omitempty,gte=3600,lte=86400"`
+	User              *string `validate:"omitempty"`
+	AwsAccount        *string `validate:"omitempty"`
+	AwsRole           *string `validate:"omitempty"`
+	AwsSessionTime    *int64  `validate:"omitempty,gte=3600,lte=86400"`
 	identityProviders map[string]IdpProfile
 }
 
@@ -80,7 +81,8 @@ func (p *ProfileSettings) Display(profileName *string) {
 		provider.Log(profileName)
 	}
 
-	displayStringSetting(profilePrompt(profileName, labelRole), p.AwsRole)
+	displayStringSetting(profilePrompt(profileName, labelAwsAccount), p.AwsAccount)
+	displayStringSetting(profilePrompt(profileName, labelAwsRole), p.AwsRole)
 	displayIntSetting(profilePrompt(profileName, labelSessionTime), p.AwsSessionTime)
 }
 
@@ -149,9 +151,13 @@ func CreateProfileSettings(flags *pflag.FlagSet, rootProfileName *string, defaul
 
 	// AWS
 
-	profileSettings.AwsRole = evaluateString(labelRole,
-		flagConfigProvider(FlagSetRole),
-		interactiveStringValue(profilePrompt(rootProfileName, labelRole), defaultSettings.AwsRole, nil))
+	profileSettings.AwsAccount = evaluateString(labelAwsAccount,
+		flagConfigProvider(FlagSetAwsAccount),
+		interactiveStringValue(profilePrompt(rootProfileName, labelAwsAccount), defaultSettings.AwsAccount, nil))
+
+	profileSettings.AwsRole = evaluateString(labelAwsRole,
+		flagConfigProvider(FlagSetAwsRole),
+		interactiveStringValue(profilePrompt(rootProfileName, labelAwsRole), defaultSettings.AwsRole, nil))
 
 	profileSettings.AwsSessionTime = evaluateInt(labelSessionTime,
 		flagConfigProvider(FlagSetSessionTime),
@@ -198,7 +204,10 @@ func StoreProfileSettings(profileSettings *ProfileSettings) error {
 
 	// AWS
 
-	if err := setString(tree, prefix+profileKeyRole, profileSettings.AwsRole); err != nil {
+	if err := setString(tree, prefix+profileKeyAwsAccount, profileSettings.AwsAccount); err != nil {
+		return err
+	}
+	if err := setString(tree, prefix+profileKeyAwsRole, profileSettings.AwsRole); err != nil {
 		return err
 	}
 	if err := setInt(tree, prefix+profileKeySessionTime, profileSettings.AwsSessionTime); err != nil {
@@ -324,7 +333,8 @@ func loadProfile(s *viper.Viper, profileName *string) *ProfileSettings {
 
 		// AWS
 
-		p.AwsRole = getString(s, profileKeyRole)
+		p.AwsAccount = getString(s, profileKeyAwsAccount)
+		p.AwsRole = getString(s, profileKeyAwsRole)
 		p.AwsSessionTime = getInt(s, profileKeySessionTime)
 	}
 	return p

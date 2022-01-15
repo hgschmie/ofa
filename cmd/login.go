@@ -27,7 +27,8 @@ func init() {
 		v.OverrideFlags(loginCmd.Flags())
 	}
 
-	loginCmd.Flags().String(ofa.FlagRole, "", ofa.FlagDescRole)
+	loginCmd.Flags().String(ofa.FlagAwsAccount, "", ofa.FlagDescAwsAccount)
+	loginCmd.Flags().String(ofa.FlagAwsRole, "", ofa.FlagDescAwsRole)
 	loginCmd.Flags().Int64(ofa.FlagSessionTime, 0, ofa.FlagDescSessionTime)
 
 	loginCmd.Flags().BoolVar(&noSave, ofa.FlagEval, false, ofa.FlagDescEval)

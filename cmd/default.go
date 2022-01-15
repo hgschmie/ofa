@@ -23,9 +23,9 @@ func init() {
 		v.ConfigurationFlags(defaultSetCmd.Flags())
 	}
 
-	defaultSetCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)
+	defaultSetCmd.Flags().String(ofa.FlagSetAwsAccount, "", ofa.FlagDescSetAwsAccount)
+	defaultSetCmd.Flags().String(ofa.FlagSetAwsRole, "", ofa.FlagDescSetAwsRole)
 	defaultSetCmd.Flags().Int64(ofa.FlagSetSessionTime, 0, ofa.FlagDescSetSessionTime)
-
 }
 
 var (

@@ -29,7 +29,8 @@ func init() {
 
 	// AWS
 
-	profileCreateCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)
+	profileCreateCmd.Flags().String(ofa.FlagSetAwsAccount, "", ofa.FlagDescSetAwsAccount)
+	profileCreateCmd.Flags().String(ofa.FlagSetAwsRole, "", ofa.FlagDescSetAwsRole)
 	profileCreateCmd.Flags().Int64(ofa.FlagSetSessionTime, 0, ofa.FlagDescSetSessionTime)
 
 	profileRemoveCmd.Flags().String(ofa.FlagProfile, "", "The profile to delete.")
@@ -44,11 +45,11 @@ func init() {
 
 	// AWS
 
-	profileUpdateCmd.Flags().String(ofa.FlagSetRole, "", ofa.FlagDescSetRole)
+	profileUpdateCmd.Flags().String(ofa.FlagSetAwsAccount, "", ofa.FlagDescSetAwsAccount)
+	profileUpdateCmd.Flags().String(ofa.FlagSetAwsRole, "", ofa.FlagDescSetAwsRole)
 	profileUpdateCmd.Flags().Int64(ofa.FlagSetSessionTime, 0, ofa.FlagDescSetSessionTime)
 
 	profileShowCmd.Flags().String(ofa.FlagProfile, "", "The profile to show.")
-
 }
 
 var (
