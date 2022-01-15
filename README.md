@@ -6,8 +6,7 @@ See the [Changes](CHANGES.md) file for a list of changes and [Development](DEVEL
 build and contribute to this project.
 
 This software is provided *as is* under MIT license. It may contain bugs and does not work in all possible corner cases.
-I have access to developer accounts on OneLogin and Auth0. There is no usable, permanent free tier on Okta, so the Okta
-support has fallen behind (it should be functional but not all features may be supported).
+I have access to developer accounts on OneLogin and Auth0. There is no usable, permanent free tier on Okta.
 
 ## State of IdPs
 
@@ -34,17 +33,27 @@ see [SAML verify factor API call with authentication denied](https://stackoverfl
 ### Auth0
 
 **Auth0 does not work**. I could not figure out how to get this to
-work (https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354).
+work [Auth0 Forum Thread](https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354).
 
 ## Using Okta
 
 ### Prerequisite: Setting up Okta and AWS
 
 The `ofa` tool assumes that your Okta/AWS setup is using the "AWS Account Federation"
-Okta application (https://www.okta.com/integrations/aws-account-federation/).
+Okta application [AWS Account Federation](https://www.okta.com/integrations/aws-account-federation/).
 
 This requires a regular Okta account or at least an Okta trial account; developer accounts do not allow installation of
 applications.
+
+### Bonus feature: Command line completion
+
+`ofa supports command line completion for `bash`, `fish` and `zsh`, e.g. for bash:
+
+```bash
+$ eval $(ofa completion bash)
+```
+
+will activate TAB-completion for all `ofa` commands.
 
 ### Okta configuration reference
 
@@ -129,7 +138,8 @@ brower, AWS will present a selection screen where the accounts and all available
 `ofa` supports this mode, however there are some caveats:
 
 - When the set of roles contains more than one AWS account and the user needs to choose between multiple roles from
-  multiple accounts, the menu selection will contain the AWS account ids in parentheses.
+  multiple accounts, the menu selection will contain the AWS account ids in parentheses. If the AWS accounts are configured
+  with Account aliases, the aliases will be displayed instead.
 - When the same role name is presented in multiple accounts, role selection will always fall back to the interactive
   dialog as `ofa` only stores the role name and not the account id in its configuration. This may be fixed in a future
   version.
@@ -167,6 +177,7 @@ The `ofa` application supports the `--help` flag and the `help` command everywhe
 * `ofa defaults show`
 * `ofa profile create`
 * `ofa profile list`
+* `ofa profile show`
 * `ofa profile update`
 * `ofa profile remove`
 * `ofa password set`
@@ -238,8 +249,9 @@ Each profile may consist of
 
 All parameters are optional, the tool may fall back to its defaults or prompt in interactive mode.
 
-The `ofa profile list` command lists all available profiles. Verbose mode shows all profile parameters, quiet mode only
-the names of the profiles.
+The `ofa profile list` command lists all available profiles.
+
+The `ofa profile show` command shows details for one or all profiles, depending on the `--profile` flag.
 
 To create a new profile, the `ofa profile create` command will either use command line parameters or prompt for the
 profile settings.
