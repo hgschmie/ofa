@@ -40,7 +40,7 @@ func awsRoleMenuSelector(label string, roles []samlAwsRole, multiAccount bool) (
 		var menuKey string
 		if multiAccount {
 			// display account id if more than one account present
-			menuKey = fmt.Sprintf("%s (%s)", v.String(), v.AccountId())
+			menuKey = fmt.Sprintf("%s (%s)", v.String(), v.DisplayName())
 		} else {
 			// there is a wonderful bug hidden here which is due to the legacy of golang to C.
 			// When using "&v" here, this will store not the address of the element in the

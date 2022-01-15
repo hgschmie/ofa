@@ -81,4 +81,7 @@ const (
 	labelSessionTime = "AWS session duration"
 	labelUser        = "Username"
 	labelURL         = "Base/organization URL"
+
+	// state cache prefix
+	stateCacheAwsAccounts = "aws_accounts"
 )

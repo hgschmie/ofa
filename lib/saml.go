@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"strings"
-
 	"github.com/antchfx/xmlquery"
 	"github.com/antchfx/xpath"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 var (
@@ -41,6 +40,7 @@ func init() {
 type samlAwsRole struct {
 	PrincipalArn *arn.ARN
 	RoleArn      *arn.ARN
+	AccountName  *string
 	SessionTime  int64 // The SAML Request contains a session time, but this is not usable as the AWS roles may be configured to a different max session duration.
 }
 
@@ -52,6 +52,14 @@ func (role samlAwsRole) AccountId() string {
 	return role.RoleArn.AccountID
 }
 
+func (role samlAwsRole) DisplayName() string {
+	if role.AccountName != nil {
+		return *role.AccountName
+	} else {
+		return role.AccountId()
+	}
+}
+
 func newSamlAwsRole(s string, sessionDuration int64) (*samlAwsRole, error) {
 	roleText := strings.Split(s, ",")
 	if len(roleText) < 2 {
@@ -61,14 +69,14 @@ func newSamlAwsRole(s string, sessionDuration int64) (*samlAwsRole, error) {
 	result := &samlAwsRole{SessionTime: sessionDuration}
 
 	for _, role := range roleText {
-		arn, err := arn.Parse(role)
+		roleArn, err := arn.Parse(role)
 		if err != nil {
 			return nil, err
 		}
-		if strings.HasPrefix(arn.Resource, "role/") {
-			result.RoleArn = &arn
-		} else if strings.HasPrefix(arn.Resource, "saml-provider/") {
-			result.PrincipalArn = &arn
+		if strings.HasPrefix(roleArn.Resource, "role/") {
+			result.RoleArn = &roleArn
+		} else if strings.HasPrefix(roleArn.Resource, "saml-provider/") {
+			result.PrincipalArn = &roleArn
 		}
 	}
 
@@ -115,6 +123,11 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, e
 			return nil, err
 		}
 
+		// try populating the Account name
+		if err := populateAccountName(samlRole, saml); err != nil {
+			return nil, err
+		}
+
 		if session.AwsRole == nil || strings.ToLower(*session.AwsRole) == strings.ToLower(samlRole.String()) {
 			if accountIdSeen == nil {
 				accountIdSeen = toSP(samlRole.AccountId())
@@ -143,4 +156,34 @@ func SelectAwsRoleFromSaml(session *LoginSession, saml *string) (*samlAwsRole, e
 		arnRole = result
 	}
 	return arnRole, nil
+}
+
+func populateAccountName(role *samlAwsRole, samlResponse *string) error {
+	accountCache := stateCache.subStore(stateCacheAwsAccounts)
+
+	accountAlias := getString(accountCache, role.AccountId())
+	if accountAlias != nil {
+		role.AccountName = accountAlias
+		return nil
+	}
+
+	accountAlias, err := accountAliasFromSaml(role, samlResponse)
+
+	// return err if err, return nil if error is nil and accountAlias also nil
+	if err != nil {
+		return err
+	}
+
+	if accountAlias == nil {
+		role.AccountName = toSP(role.AccountId())
+	} else {
+		role.AccountName = accountAlias
+	}
+
+	if tree, err := stateCache.loadConfigFile(); err == nil {
+		if err = setString(tree, stateCacheAwsAccounts+"."+role.AccountId(), accountAlias); err == nil {
+			_ = stateCache.storeConfigFile(tree)
+		}
+	}
+	return nil
 }
