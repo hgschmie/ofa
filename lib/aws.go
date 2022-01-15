@@ -1,14 +1,14 @@
 package ofa
 
 import (
-	"path/filepath"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/go-ini/ini"
 	log "github.com/sirupsen/logrus"
+	"path/filepath"
 )
 
 func init() {
@@ -34,31 +34,31 @@ func init() {
 }
 
 const (
-	awsAccessKeyId      = "aws_access_key_id"
-	awsSecrectAccessKey = "aws_secret_access_key"
-	awsSessionToken     = "aws_session_token"
+	awsAccessKeyId     = "aws_access_key_id"
+	awsSecretAccessKey = "aws_secret_access_key"
+	awsSessionToken    = "aws_session_token"
 )
 
 var (
 	awsSession *session.Session
 	stsClient  *sts.STS
-	homeDir    *string
 )
 
 // AssumeAwsRole takes the SAML credentials and assumes an AWS role
-func AssumeAwsRole(session *LoginSession, samlResponse *string, samlAwsRole *samlAwsRole) (*credentials.Credentials, error) {
+func AssumeAwsRole(samlResponse *string, samlAwsRole *samlAwsRole, sessionTime *int64) (*credentials.Credentials, error) {
 	Information("**** Assuming AWS role '%s'", samlAwsRole.RoleArn)
 
 	input := &sts.AssumeRoleWithSAMLInput{}
 
-	if session.AwsSessionTime != nil {
-		input.SetDurationSeconds(*session.AwsSessionTime)
+	if sessionTime != nil {
+		input.SetDurationSeconds(*sessionTime)
 	}
 
 	err := input.
 		SetPrincipalArn(samlAwsRole.PrincipalArn.String()).
 		SetRoleArn(samlAwsRole.RoleArn.String()).
-		SetSAMLAssertion(*samlResponse).Validate()
+		SetSAMLAssertion(*samlResponse).
+		Validate()
 
 	if err != nil {
 		return nil, err
@@ -74,6 +74,43 @@ func AssumeAwsRole(session *LoginSession, samlResponse *string, samlAwsRole *sam
 	creds := credentials.NewStaticCredentials(*res.Credentials.AccessKeyId, *res.Credentials.SecretAccessKey, *res.Credentials.SessionToken)
 
 	return creds, nil
+}
+
+func accountAliasFromSaml(role *samlAwsRole, samlResponse *string) (*string, error) {
+
+	roleCredentials, err := AssumeAwsRole(samlResponse, role, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	awsRoleConfig := aws.NewConfig().
+		WithCredentialsChainVerboseErrors(true).
+		WithCredentials(roleCredentials)
+
+	awsRoleOptions := session.Options{
+		Config:            *awsRoleConfig,
+		SharedConfigState: session.SharedConfigDisable,
+	}
+
+	awsRoleSession, err := session.NewSessionWithOptions(awsRoleOptions)
+
+	if err != nil {
+		return nil, err
+	}
+
+	iamClient := iam.New(awsRoleSession)
+
+	iamInput := &iam.ListAccountAliasesInput{}
+	iamOutput, err := iamClient.ListAccountAliases(iamInput)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(iamOutput.AccountAliases) > 0 {
+		return iamOutput.AccountAliases[0], nil
+	}
+
+	return nil, nil
 }
 
 // WriteAwsCredentials writes the credentials for the AWS profile selected into the AWS config files.
@@ -103,7 +140,7 @@ func WriteAwsCredentials(session *LoginSession, cred *credentials.Credentials) e
 	if err != nil {
 		return err
 	}
-	_, err = section.NewKey(awsSecrectAccessKey, v.SecretAccessKey)
+	_, err = section.NewKey(awsSecretAccessKey, v.SecretAccessKey)
 	if err != nil {
 		return err
 	}
@@ -114,7 +151,7 @@ func WriteAwsCredentials(session *LoginSession, cred *credentials.Credentials) e
 
 	// the okta-aws-cli-assume-role tool also wrote a aws_security_token entry for some really ancient versions of boto.
 
-	storeFile(fileName, func(filename string) error {
+	err = storeFile(fileName, func(filename string) error {
 		return cfg.SaveTo(filename)
 	})
 

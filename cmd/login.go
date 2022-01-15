@@ -67,7 +67,7 @@ var (
 				log.Fatalf("Could not parse SAML assertion: %v", err)
 			}
 
-			creds, err := ofa.AssumeAwsRole(config, samlResponse, arnRole)
+			creds, err := ofa.AssumeAwsRole(samlResponse, arnRole, config.AwsSessionTime)
 			if err != nil {
 				log.Fatalf("Could not assume selected AWS role: %v", err)
 			}
