@@ -8,6 +8,31 @@ build and contribute to this project.
 This software is provided *as is* under MIT license. It may contain bugs and does not work in all possible corner cases.
 I have access to developer accounts on OneLogin and Auth0. There is no usable, permanent free tier on Okta.
 
+## Installation
+
+The preferred way to install `ofa` is by downloading the latest release for your system architecture from the [package repository](https://github.com/hgschmie/ofa/releases). When running on macOS, please [see the note about code signing](https://github.com/hgschmie/ofa/blob/main/DEVELOPMENT.md#note-about-macos-code-signing) when running `ofa` for the first time.
+
+Alternatively, install `ofa` from source through the golang package system by running
+
+```bash
+$ go install github.com/hgschmie/ofa/v3@latest
+```
+
+This also sidesteps the signing problems with macOS. If the security policy on your computer does not allow unsigned binaries, this is the best way to install `ofa`.
+
+A release version of `ofa` reports
+
+```bash
+$ ofa version
+INFO ofa 3.0.2, commit d6df9685bd926a7fe09c0959f729ee6bbfe1ab1b, built at 2022-01-15T18:27:52Z by goreleaser
+```
+
+while a self-built or development version reports
+
+```bash
+$ ofa version
+INFO ofa dev, commit none, built at unknown by unknown
+```
 ## State of IdPs
 
 * Okta - Supported, Functional

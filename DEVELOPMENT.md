@@ -58,7 +58,9 @@ Feel free to reach out to me to get your service supported by `ofa`.
   all the time).
   - No one could tell me whether [parsing a HTML page](https://developer.okta.com/docs/guides/session-cookie/overview/#retrieving-a-session-cookie-via-openid-connect-authorization-endpoint) is really the only way to get at the SAML Assertion with an access token. I found similar code in other tools but it seems less than ideal.
 - If you work for Auth0:
-  - [Exchange a bearer token for a SAML assertion](https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354) is a hard blocker. I abandoned work on the auth0 code because of it and the lack of community response
+  - [Exchange a bearer token for a SAML assertion](https://community.auth0.com/t/exchange-a-bearer-token-for-a-saml-assertion/59354) is a hard blocker. I abandoned work on the auth0 code because of it and the lack of community response.
+- If you work for OneLogin:
+  - How about fixing the "Deny does nothing" bug (CS0298380)? :-)
 
 #### NOTE ABOUT MACOS CODE SIGNING
 
