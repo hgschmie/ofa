@@ -14,11 +14,6 @@ import (
 func init() {
 	var err error
 
-	homeDir, err = userHomeDir()
-	if err != nil {
-		log.Panicf("Could not determine home directory: %v", err)
-	}
-
 	awsConfig := aws.NewConfig().WithCredentialsChainVerboseErrors(true)
 	awsOptions := session.Options{
 		Config:            *awsConfig,
