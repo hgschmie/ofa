@@ -71,7 +71,7 @@ func getURL(s *string) (*url.URL, error) {
 }
 
 func padLabel(label string) string {
-	return fmt.Sprintf("%-25s", label+":")
+	return fmt.Sprintf("%-40s", label+":")
 }
 
 func userHomeDir() (*string, error) {
