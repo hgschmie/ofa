@@ -47,7 +47,7 @@ applications.
 
 ### Bonus feature: Command line completion
 
-`ofa supports command line completion for `bash`, `fish` and `zsh`, e.g. for bash:
+`ofa` supports command line completion for `bash`, `fish` and `zsh`, e.g. for bash:
 
 ```bash
 $ eval $(ofa completion bash)
