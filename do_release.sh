@@ -7,10 +7,14 @@ fi
 
 VERSION=$1 ; shift
 
-git tag ${VERSION}
 changie batch ${VERSION}
-
 RELEASE_NOTES=changes/$(changie latest).md
-
 changie merge
-goreleaser --release-notes=${RELEASE_NOTES}
+
+git add $RELEASE_NOTES
+git add -u
+git commit -m "add changelog for ${VERSION}"
+
+git tag ${VERSION}
+
+goreleaser --release-notes=${RELEASE_NOTES} --rm-dist
